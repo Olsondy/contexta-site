@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contexta｜语境自修 · 把单词放回语境里练</title>
+<meta name="description" content="语境自修是一款微信小程序：选一个词，做完它的语境题组，立刻看到答案、逐项解析与易混词辨析。">
+<meta name="theme-color" content="#252825">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preload" href="assets/fonts/satoshi-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<!--
+THESIS: 一张真实词卡就是整页官网；访客滚动时亲手走完「认词 → 语境题 → 反馈辨析 → 学完」一次闭环。拒绝「标题 + 手机截图 + 三栏功能卡」的应用官网套路。
+OWN-WORLD: 安静自习桌。炭灰画布 #252825、内容面 #2E312E、紫灰 #9A90BA 只给操作与学习线索，正确/错误/收藏保留语义色；Satoshi 大字英文单词、仓耳渔阳体中文、25% 基线马克笔高亮；结尾一整屏紫灰。
+STORY: 访客先看到一个单词，理解「一个词 = 一次语境练习」，相信答案与解析可靠，最后扫码或在微信搜索「语境自修」。
+FIRST VIEWPORT: 左侧大标题「把单词放回语境里练。」+ 一句说明 + 主行动；右侧一张 1:1 复刻的小程序词卡占据视高约 75%，单词 prized 居中；顶部品牌栏右侧「打开小程序」。
+FORM: 会动的词卡首屏（surface 结构候选 1，用户锁定），seed key e51a8d87。
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="bar" data-bar>
+  <a class="bar__brand" href="#top" aria-label="Contexta｜语境自修 首页">
+    <img src="assets/contexta-mark.svg" alt="" width="32" height="32">
+    <span class="bar__name">Contexta</span>
+    <span class="bar__cn">语境自修</span>
+  </a>
+  <a class="bar__cta" href="#get">打开小程序</a>
+</header>
+
+<main id="main">
+  <!-- 滚动叙事：同一张词卡依次经历四个阶段 -->
+  <section class="story" id="top" data-story aria-label="一次短训练">
+    <div class="story__sticky">
+      <div class="story__copy">
+        <div class="cap is-on" data-cap="0">
+          <h1 class="cap__hero">把单词<br>放回语境里练。</h1>
+          <p class="cap__lead">选一个词，做完它的语境题组，立刻看到答案、逐项解析和易混词辨析。一次短训练，5 到 10 分钟。</p>
+          <div class="cap__actions">
+            <a class="btn btn--primary" href="#get">扫码进入小程序</a>
+            <span class="cap__hint">或在微信搜索「语境自修」</span>
+          </div>
+        </div>
+        <div class="cap" data-cap="1">
+          <h2 class="cap__title">先认识它。</h2>
+          <p class="cap__body">轻触词卡翻面：英美音标、词性释义、词族与常见搭配。不想学这个词，上滑就换下一个。</p>
+        </div>
+        <div class="cap" data-cap="2">
+          <h2 class="cap__title">再把它<br>放进语境。</h2>
+          <p class="cap__body">每个单词对应一组语境题。读一段话，判断它在这里是什么意思；需要时打开中文辅助。</p>
+        </div>
+        <div class="cap" data-cap="3">
+          <h2 class="cap__title">答完，<br>立刻知道为什么。</h2>
+          <p class="cap__body">选错也没关系。正确答案、每个选项的解析，以及最容易混淆的那个词，都摆在你面前。</p>
+        </div>
+        <div class="cap" data-cap="4">
+          <h2 class="cap__title cap__title--keep">做完题组，<br>这个词就算学完。</h2>
+          <p class="cap__body">完整学完的单词计入词本进度，以后不会倒退。下一个词，随时开始。</p>
+        </div>
+        <ol class="steps" aria-label="训练阶段">
+          <li><button type="button" data-goto="1">认识</button></li>
+          <li><button type="button" data-goto="2">语境</button></li>
+          <li><button type="button" data-goto="3">反馈</button></li>
+          <li><button type="button" data-goto="4">学完</button></li>
+        </ol>
+      </div>
+
+      <div class="stage" aria-hidden="true">
+        <p class="stage__status">
+          <span class="stage__book">托福语境练习 ·</span>
+          学完 <span class="stage__count" data-count>127</span> / 1600
+        </p>
+        <div class="deck">
+          <div class="deck__layer deck__layer--back"></div>
+          <div class="deck__layer deck__layer--mid"></div>
+          <div class="card" data-card>
+            <div class="card__flipper">
+              <!-- 正面 -->
+              <div class="face face--front">
+                <div class="face__top">
+                  <svg class="ico ico--heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg>
+                </div>
+                <div class="face__word">prized</div>
+                <div class="face__tip">「 轻触查看语境 · 上滑跳过 」</div>
+              </div>
+
+              <!-- 背面：释义层 + 题目层 -->
+              <div class="face face--back">
+                <div class="layer layer--def">
+                  <div class="def__head">
+                    <span class="def__word">prized</span>
+                    <svg class="ico ico--heart is-saved" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg>
+                  </div>
+                  <p class="def__phon"><span>英</span> [praɪzd]　<span>美</span> [praɪzd]</p>
+                  <p class="def__sense"><span class="def__pos">adj.</span> 珍贵的；备受重视的</p>
+                  <dl class="def__rel">
+                    <div><dt>prize</dt><dd><span>词族</span>珍视；奖项</dd></div>
+                    <div><dt>highly prized</dt><dd><span>搭配</span>备受珍视的</dd></div>
+                  </dl>
+                  <div class="mini-btn">开始学习 · 6 道题</div>
+                </div>
+
+                <div class="layer layer--q">
+                  <div class="q__meta">
+                    <span class="q__book">托福语境练习</span>
+                    <span class="q__tag">非官方内容</span>
+                    <span class="q__no">3 / 6</span>
+                  </div>
+                  <p class="q__passage">The library keeps several handwritten field journals in a climate-controlled room because researchers still consider them highly <mark>prized</mark> records of the region’s early plant life.</p>
+                  <p class="q__prompt">The word “prized” in the passage is closest in meaning to:</p>
+                  <ul class="q__choices">
+                    <li class="choice" data-right><b>A</b><span>valued</span><i class="choice__state"><svg class="ico" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></i></li>
+                    <li class="choice"><b>B</b><span>universal</span></li>
+                    <li class="choice" data-picked><b>C</b><span>uncommon</span><i class="choice__state"><svg class="ico" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></i><i class="tap"></i></li>
+                    <li class="choice"><b>D</b><span>preserved</span></li>
+                  </ul>
+                  <div class="q__compare">
+                    <p class="q__compare-title">最强迷惑项对比</p>
+                    <p><strong>uncommon</strong> 只说“不常见”；<strong>prized</strong> 强调“被珍惜、被认为有价值”，对应 valued。</p>
+                  </div>
+                  <div class="mini-btn mini-btn--next">下一道题</div>
+                </div>
+
+                <div class="done">
+                  <img class="done__stamp" src="assets/img/completion-stamp.webp" alt="" width="150" height="150">
+                  <p class="done__word">prized</p>
+                  <p class="done__note">题组完成 · 已计入学完</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="books" aria-labelledby="books-title">
+    <div class="wrap books__grid">
+      <div class="books__text">
+        <h2 id="books-title" class="sec-title">词本按用途选，<br>练法始终一样。</h2>
+        <p class="sec-body">每本词本都有自己的词表和语境题组。换一本词本，自主选词、语境练习、即时反馈的节奏不变。</p>
+        <p class="sec-note">雅思、托福方向的内容为原创的非官方语境练习，与相关考试机构没有关联。</p>
+      </div>
+      <figure class="books__covers">
+        <img src="assets/img/ielts.png" alt="雅思词本封面" width="336" height="479" loading="lazy">
+        <img src="assets/img/toefl.png" alt="托福词本封面" width="336" height="479" loading="lazy">
+      </figure>
+    </div>
+  </section>
+
+  <section class="trust" aria-labelledby="trust-title">
+    <div class="wrap">
+      <h2 id="trust-title" class="trust__line">同一道题，<br>永远是<span class="hl">同一份解析</span>。</h2>
+      <p class="sec-body trust__body">词义、题目、解析和辨析都在上线前经过逐条人工审核。今天看到的答案，明天再看还是一样，复习时不会被新的说法打乱。</p>
+    </div>
+  </section>
+
+  <section class="keep" aria-labelledby="keep-title">
+    <div class="wrap">
+      <h2 id="keep-title" class="sec-title">每天练一点，<br>积累看得见。</h2>
+      <dl class="keep__list">
+        <div><dt>今日目标</dt><dd>自己定每天做多少题，也可以不设。达标时，你的伙伴会探出头来。</dd></div>
+        <div><dt>经验与积分</dt><dd>每答一题都留下记录，近 7 天练了什么一目了然。</dd></div>
+        <div><dt>学习伙伴</dt><dd>免费领取一位伙伴，攒下的积分可以换新的伙伴。</dd></div>
+        <div><dt>我的勋章</dt><dd>学习路上的节点，会以勋章的样子留下来。</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="get" id="get" aria-labelledby="get-title">
+    <div class="wrap get__grid">
+      <div>
+        <h2 id="get-title" class="get__title">下一个单词，<br>从微信里开始。</h2>
+        <p class="get__body">微信扫码打开「语境自修」小程序，登录后选一本词本即可开始。</p>
+        <div class="get__search">
+          <span>微信搜索</span>
+          <strong>语境自修</strong>
+          <button type="button" class="copy" data-copy="语境自修">复制名称</button>
+        </div>
+        <p class="get__toast" role="status" aria-live="polite" data-toast></p>
+      </div>
+      <div class="qr" data-qr>
+        <img class="qr__img" src="assets/img/miniprogram-code.png" alt="语境自修小程序码" width="240" height="240" data-qr-img>
+        <div class="qr__fallback" aria-hidden="true">
+          <img src="assets/contexta-mark.svg" alt="" width="96" height="96">
+        </div>
+        <p class="qr__cap">微信扫一扫 · 语境自修</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__row">
+    <span class="foot__brand"><img src="assets/contexta-mark.svg" alt="" width="22" height="22">Contexta｜语境自修</span>
+    <span>© 2026 Contexta</span>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

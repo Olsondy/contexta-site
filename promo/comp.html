@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Contexta 30s · 竖屏宣传短片 v3</title>
+<!--
+  30 秒 1080×1920 竖屏短片 v3。每一帧都是时间 t 的纯函数：window.__seek(t)。
+  结构：一张词卡（产品唯一的操作）→ 学完时题组的四个点聚成「语境透镜」→ 镜头穿过透镜，
+  进入这个词所在的真实语境（论文 / 实验记录 / 研讨数据），三个世界各有自己的视觉 →
+  三枚透镜排成作品集 → 收拢成 Logo 落版。
+  英文句子、词义与选项取自 contexta-server 本地库中已审核的 evidence / analyze 内容；
+  三个世界的场景画面为宣传绘制的示意。
+  预览：浏览器打开本文件并加 ?play。
+-->
+<style>
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-400-normal.woff2"); font-weight: 400; }
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-500-normal.woff2"); font-weight: 500; }
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-900-normal.woff2"); font-weight: 900; }
+@font-face { font-family: "Jaldi"; src: url("../assets/fonts/jaldi-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "Tsanger YuYang"; src: url("fonts/tsanger-yuyang-400.subset.woff2"); font-weight: 400; }
+@font-face { font-family: "Tsanger YuYang"; src: url("fonts/tsanger-yuyang-700.subset.woff2"); font-weight: 700; }
+@font-face { font-family: "Libre Baskerville"; src: url("fonts/librebaskerville-LibreBaskerville.ttf"); font-weight: 400 700; }
+@font-face { font-family: "Libre Baskerville"; src: url("fonts/librebaskerville-LibreBaskerville-Italic.ttf"); font-weight: 400 700; font-style: italic; }
+@font-face { font-family: "Caveat"; src: url("fonts/caveat-Caveat.ttf"); font-weight: 400 700; }
+
+:root {
+  --ivory: #fcf9e8; --canvas: #252825; --outside: #1c1f1c; --surface: #2e312e; --surface-muted: #363a36;
+  --ink: #f3f4ef; --ink-2: #c7cbc4; --ink-3: #a5aca3; --line: #4b504b; --line-strong: #687068;
+  --accent: #9a90ba; --accent-strong: #b8b0d4; --positive: #7bc7a4;
+  --cn: "Tsanger YuYang", "PingFang SC", sans-serif;
+  --en: "Satoshi", "Helvetica Neue", sans-serif;
+  --serif: "Libre Baskerville", Georgia, serif;
+  --hand: "Caveat", "Noteworthy", cursive;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+body { font-family: var(--en); color: var(--ink); -webkit-font-smoothing: antialiased; }
+#frame { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: radial-gradient(110% 60% at 50% 45%, #2b2f2b 0%, var(--canvas) 55%, var(--outside) 100%); }
+.abs { position: absolute; }
+
+/* ---------- 词卡 ---------- */
+.card { position: absolute; left: 180px; top: 500px; width: 720px; height: 940px; perspective: 2200px; visibility: hidden; }
+.card__flip { position: absolute; inset: 0; transform-style: preserve-3d; }
+.face { position: absolute; inset: 0; border-radius: 40px; background: var(--surface); border: 2px solid var(--line); backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; box-shadow: 0 60px 110px -50px rgba(0,0,0,.85), 0 4px 10px rgba(0,0,0,.25); }
+.front { display: grid; grid-template-rows: 120px 1fr 100px; padding: 24px 36px; }
+.front .heart { justify-self: end; align-self: center; width: 46px; height: 46px; fill: none; stroke: var(--ink-2); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.front .word { align-self: center; text-align: center; font: 700 132px/1 var(--en); letter-spacing: -0.01em; }
+.front .tip { align-self: center; text-align: center; font: 400 28px/1 var(--cn); color: var(--ink-3); letter-spacing: .02em; }
+.back { transform: rotateY(180deg); padding: 52px 52px 48px; display: flex; flex-direction: column; }
+.back .meta { display: flex; justify-content: space-between; font: 700 28px/1 var(--cn); color: var(--accent-strong); }
+.back .meta span:last-child { color: var(--ink-3); font-weight: 400; }
+.back .snip { margin-top: 48px; font: 400 44px/1.55 var(--en); color: var(--ink-2); }
+.back .snip b { color: var(--ink); font-weight: 900; background: linear-gradient(180deg, transparent 70%, rgba(154,144,186,.55) 70%); }
+.back .ask { margin-top: 44px; font: 700 46px/1.4 var(--cn); }
+.back .ask i { font: 900 46px/1 var(--en); font-style: normal; color: var(--accent-strong); }
+.opts { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.opt { height: 124px; border-radius: 28px; border: 2px solid var(--line-strong); display: flex; align-items: center; justify-content: center; gap: 14px; font: 700 48px/1 var(--cn); background: var(--surface); }
+.opt svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; display: none; }
+.prog { margin-top: 40px; display: flex; align-items: center; gap: 22px; font: 400 28px/1 var(--cn); color: var(--ink-3); }
+.prog .dots { display: flex; gap: 18px; }
+.prog .dot { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--line-strong); }
+.prog .dot.on { background: var(--ivory); border-color: var(--ivory); }
+
+#finger { position: absolute; left: 0; top: 0; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; background: rgba(252,249,232,.26); box-shadow: 0 0 0 3px rgba(252,249,232,.6), 0 12px 30px rgba(0,0,0,.35); opacity: 0; }
+#ripple { position: absolute; left: 0; top: 0; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; border: 4px solid rgba(252,249,232,.75); opacity: 0; }
+
+/* ---------- 语境透镜 ---------- */
+#lens { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: visible; pointer-events: none; }
+#lensLabel { position: absolute; left: 0; right: 0; text-align: center; font: 700 40px/1 var(--cn); color: var(--ink-2); letter-spacing: .3em; padding-left: .3em; opacity: 0; }
+#lensLabel b { font: 700 40px/1 var(--en); color: var(--ivory); letter-spacing: 0; margin-left: 10px; }
+.flyword { position: absolute; font: 700 132px/1 var(--en); color: var(--ink); transform-origin: 50% 50%; white-space: nowrap; visibility: hidden; }
+
+/* ---------- 世界 ---------- */
+.wclip { position: absolute; inset: 0; visibility: hidden; }
+.world { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 540px 960px; overflow: hidden; }
+.ring { position: absolute; inset: 0; pointer-events: none; }
+
+/* 世界一：论文 */
+#w1 { background: #f2ede0; color: #1f1d19; }
+#w1 .rh { position: absolute; left: 80px; right: 80px; top: 130px; display: flex; justify-content: space-between; font: 700 22px/1 var(--en); letter-spacing: .22em; color: #6d675b; padding-bottom: 22px; border-bottom: 2px solid #1f1d19; }
+#w1 .title { position: absolute; left: 80px; width: 920px; top: 210px; font: 700 78px/1.14 var(--serif); letter-spacing: -0.01em; }
+#w1 .title span { display: inline-block; }
+#w1 .by { position: absolute; left: 80px; top: 420px; font: italic 400 32px/1.3 var(--serif); color: #6d675b; }
+#w1 .fig { position: absolute; left: 80px; width: 920px; top: 500px; height: 520px; border-top: 2px solid #1f1d19; border-bottom: 1px solid #b9b2a2; }
+#w1 .figcap { position: absolute; left: 0; top: 22px; font: 400 24px/1.3 var(--en); color: #6d675b; }
+#w1 .figcap b { color: #1f1d19; font-weight: 700; }
+#w1 .wrow { position: absolute; left: 0; right: 0; height: 120px; }
+#w1 .wrow .lbl { position: absolute; left: 0; top: 44px; font: 700 24px/1 var(--en); color: #1f1d19; }
+#w1 .wrow svg { position: absolute; left: 120px; top: 0; width: 800px; height: 120px; overflow: visible; }
+#w1 .body { position: absolute; left: 80px; width: 920px; top: 1080px; font: 400 46px/1.62 var(--serif); }
+#w1 .body .w { display: inline; }
+#w1 .tw { position: relative; font-weight: 700; }
+#w1 .note { position: absolute; left: 80px; top: 1460px; width: 920px; }
+#w1 .note .k { font: 700 58px/1.2 var(--cn); color: #a8452b; }
+#w1 .note .k i { font: italic 700 52px/1 var(--serif); margin-right: 18px; }
+#w1 .note .tr { margin-top: 18px; font: 400 36px/1.6 var(--cn); color: #4d483e; }
+#w1 .cap { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; font: 700 58px/1.2 var(--cn); color: #1f1d19; }
+
+/* 世界二：野外考察笔记 */
+#w2 { background: #1d3530; color: #1d2a26; }
+#w2 .page { position: absolute; left: 60px; top: 110px; width: 960px; height: 1560px; background-color: #efe8d4; background-image: linear-gradient(rgba(63,143,134,.18) 2px, transparent 2px), linear-gradient(90deg, rgba(63,143,134,.18) 2px, transparent 2px); background-size: 48px 48px; border-radius: 10px; transform: rotate(-1.6deg); box-shadow: 0 50px 90px -40px rgba(0,0,0,.7); }
+#w2 .tape { position: absolute; width: 180px; height: 54px; background: rgba(214,196,140,.75); }
+#w2 .hd { position: absolute; left: 70px; top: 60px; font: 700 76px/1 var(--hand); color: #1d2a26; }
+#w2 .date { position: absolute; right: 70px; top: 78px; font: 600 46px/1 var(--hand); color: #3f8f86; }
+#w2 svg.vials { position: absolute; left: 60px; top: 190px; width: 840px; height: 560px; overflow: visible; }
+#w2 svg.chart { position: absolute; left: 70px; top: 800px; width: 820px; height: 330px; overflow: visible; }
+#w2 .strip { position: absolute; left: 50px; top: 1180px; width: 860px; padding: 30px 36px; background: #fffdf6; box-shadow: 0 10px 24px -12px rgba(0,0,0,.35); transform: rotate(1.2deg); font: 500 40px/1.5 var(--en); color: #1d2a26; }
+#w2 .strip .tw { position: relative; font-weight: 900; }
+#w2 .hnote { position: absolute; left: 90px; top: 1460px; font: 700 64px/1.1 var(--hand); color: #2f7a6f; }
+#w2 .hnote span { font: 700 50px/1 var(--cn); margin-left: 16px; }
+#w2 .cap { position: absolute; left: 0; right: 0; bottom: 110px; text-align: center; font: 700 58px/1.2 var(--cn); color: #efe8d4; }
+
+/* 世界三：研讨会数据 */
+#w3 { background: var(--accent); color: var(--canvas); }
+#w3 .big { position: absolute; left: 70px; top: 120px; font: 900 132px/0.92 var(--en); letter-spacing: -0.03em; }
+#w3 .big span { display: block; }
+#w3 .sub { position: absolute; left: 76px; top: 410px; font: 700 30px/1 var(--en); letter-spacing: .12em; }
+#w3 svg.plot { position: absolute; left: 70px; top: 500px; width: 940px; height: 680px; overflow: visible; }
+#w3 .sent { position: absolute; left: 70px; width: 940px; top: 1230px; font: 500 48px/1.5 var(--en); }
+#w3 .sent .tw { position: relative; font-weight: 900; }
+#w3 .pill { position: absolute; left: 70px; top: 1500px; display: inline-flex; align-items: baseline; gap: 18px; padding: 22px 34px; border-radius: 999px; background: var(--canvas); color: var(--ivory); font: 700 50px/1 var(--cn); }
+#w3 .pill i { font: italic 700 46px/1 var(--serif); }
+#w3 .pill small { font: 400 32px/1 var(--cn); color: var(--ink-2); margin-left: 8px; }
+#w3 .cap { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; font: 700 58px/1.2 var(--cn); color: var(--canvas); }
+
+/* 马克笔与手绘圈 */
+.mk::before { content: ""; position: absolute; left: -0.08em; right: -0.08em; bottom: 0.04em; height: 0.36em; background: var(--mk); transform-origin: 0 50%; transform: scaleX(var(--hl, 0)); z-index: -1; }
+.mk { z-index: 0; }
+
+/* ---------- 字幕与收尾 ---------- */
+#topCap { position: absolute; left: 0; right: 0; top: 250px; text-align: center; font: 700 72px/1.2 var(--cn); opacity: 0; }
+#galCap { position: absolute; left: 0; right: 0; top: 1660px; text-align: center; font: 700 60px/1.3 var(--cn); opacity: 0; }
+#end { position: absolute; left: 0; right: 0; top: 1130px; text-align: center; visibility: hidden; }
+#end .w { font: 700 120px/1 "Jaldi", sans-serif; letter-spacing: 0.04em; color: var(--ivory); }
+#end .c { margin-top: 20px; font: 700 50px/1 var(--cn); letter-spacing: .24em; padding-left: .24em; color: var(--ink-2); }
+#end .line { margin-top: 90px; font: 700 62px/1.3 var(--cn); }
+#end .search { margin: 50px auto 0; display: inline-flex; align-items: center; gap: 20px; padding: 26px 46px; border-radius: 999px; background: var(--accent); color: var(--canvas); font: 400 42px/1 var(--cn); }
+#end .search b { font-weight: 700; }
+#end .search svg { width: 44px; height: 44px; stroke: var(--canvas); }
+#fade { position: absolute; inset: 0; background: #000; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="cards"></div>
+  <svg id="lens" viewBox="0 0 1080 1920"></svg>
+  <div id="lensLabel">学完<b></b></div>
+
+  <!-- 世界一：论文 -->
+  <div class="wclip" id="c1"><div class="world" id="w1">
+    <div class="rh"><span>FIELD LINGUISTICS · ARCHIVE STUDY</span><span>214</span></div>
+    <h1 class="title"></h1>
+    <p class="by">Notes from a community audio archive</p>
+    <div class="fig">
+      <p class="figcap"><b>Fig. 2</b>&nbsp;&nbsp;Audio archives, elderly community members</p>
+    </div>
+    <p class="body" id="w1body"></p>
+    <div class="note"><p class="k"><i>evidence</i>v. 证实；表明</p><p class="tr">录音档案证实了连续三代人之间显著的语音演变。</p></div>
+    <p class="cap">读论文时，一眼认出它。</p>
+    <svg class="ring" id="w1ring" viewBox="0 0 1080 1920"></svg>
+  </div></div>
+
+  <!-- 世界二：野外考察笔记 -->
+  <div class="wclip" id="c2"><div class="world" id="w2">
+    <div class="page">
+      <div class="tape" style="left:-30px;top:40px;transform:rotate(-38deg)"></div>
+      <div class="tape" style="right:-30px;top:40px;transform:rotate(36deg)"></div>
+      <p class="hd">Creek survey — day 3</p>
+      <p class="date">Sep 14</p>
+      <svg class="vials" viewBox="0 0 840 560"></svg>
+      <svg class="chart" viewBox="0 0 820 330"></svg>
+      <p class="strip">Before publishing their project findings, the team will <span class="tw mk" id="w2tw" style="--mk:rgba(214,226,96,.75)">analyze</span> the water samples to detect chemical traces.</p>
+      <p class="hnote">analyze <span>仔细分析</span></p>
+    </div>
+    <p class="cap">看实验记录，也不卡壳。</p>
+    <svg class="ring" id="w2ring" viewBox="0 0 1080 1920"></svg>
+  </div></div>
+
+  <!-- 世界三：研讨会数据 -->
+  <div class="wclip" id="c3"><div class="world" id="w3">
+    <p class="big"><span>SURVEY</span><span>OUTCOMES</span></p>
+    <p class="sub">PSYCHOLOGY SEMINAR · PRELIMINARY DATA</p>
+    <svg class="plot" viewBox="0 0 940 680"></svg>
+    <p class="sent">…yet the preliminary data provided little empirical <span class="tw mk" id="w3tw" style="--mk:rgba(252,249,232,.85)">evidence</span> to support the original hypothesis.</p>
+    <p class="pill"><i>evidence</i>n. 证据<small>刚才它还是动词</small></p>
+    <p class="cap">同一个词换了语境，照样读对。</p>
+    <svg class="ring" id="w3ring" viewBox="0 0 1080 1920"></svg>
+  </div></div>
+
+  <div id="ripple"></div><div id="finger"></div>
+  <p id="topCap">学会一个词</p>
+  <p id="galCap">背过的词，在语境里用得上。</p>
+  <div id="end">
+    <p class="w">Contexta</p>
+    <p class="c">语境自修</p>
+    <p class="line">把单词放回语境里练</p>
+    <p class="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>微信搜索 <b>语境自修</b></p>
+  </div>
+  <div id="fade"></div>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s)
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)]
+  const NS = 'http://www.w3.org/2000/svg'
+  const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e }
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
+  const lerp = (a, b, u) => a + (b - a) * u
+  const seg = (t, a, b) => clamp((t - a) / (b - a))
+  const outExpo = (u) => (u >= 1 ? 1 : 1 - Math.pow(2, -10 * u))
+  const outQuart = (u) => 1 - Math.pow(1 - u, 4)
+  const inQuart = (u) => u ** 4
+  const inOut = (u) => (u < 0.5 ? 8 * u ** 4 : 1 - Math.pow(-2 * u + 2, 4) / 2)
+  const inOutCubic = (u) => (u < 0.5 ? 4 * u ** 3 : 1 - Math.pow(-2 * u + 2, 3) / 2)
+  const outBack = (u, s = 1.7) => 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2)
+  const spring = (u, z = 0.55, w = 14) => (u <= 0 ? 0 : 1 - Math.exp(-z * w * u) * Math.cos(w * Math.sqrt(1 - z * z) * u))
+  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let x = Math.imul(seed ^ (seed >>> 15), 1 | seed); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296 }
+  const vis = (el, on) => { el.style.visibility = on ? 'visible' : 'hidden' }
+  const fadeUp = (el, u, dy = 40, blur = 8) => { el.style.opacity = u; el.style.transform = `translateY(${(1 - u) * dy}px)`; el.style.filter = u < 1 ? `blur(${(1 - u) * blur}px)` : '' }
+
+  // ================= 词卡 =================
+  const CARDS = [
+    { word: 'evidence', meta: ['学术阅读词汇', '判断题'], snip: '…audio archives from elderly community members <b>evidence</b> notable phonological shifts…', ask: '这里的 <i>evidence</i> 作动词，意为“证实”？', opts: ['对', '错'], right: 0 },
+    { word: 'analyze', meta: ['学术阅读词汇', '词义题'], snip: '…the team will <b>analyze</b> the water samples to detect chemical traces.', ask: '这里的 <i>analyze</i> 是什么意思？', opts: ['仔细分析', '合成'], right: 0 },
+    { word: 'evidence', meta: ['换个语境', '词义题'], snip: '…the preliminary data provided little empirical <b>evidence</b> to support…', ask: '这里的 <i>evidence</i> 是？', opts: ['证据', '传言'], right: 0 },
+  ]
+  // 每张卡的时间点：出现、点正面、翻面、点选项、完成、穿过透镜
+  const T = [
+    { appear: 0.15, tapFront: 1.2, tapOpt: 2.3, done: 2.85, zoom: 4.3, flip: true },
+    { appear: 11.35, tapFront: 11.95, tapOpt: 12.7, done: 13.0, zoom: 13.85, flip: true },
+    { appear: 19.3, tapFront: null, tapOpt: 19.85, done: 20.05, zoom: 20.75, flip: false },
+  ]
+  const cardsEl = $('#cards')
+  const cards = CARDS.map((c, i) => {
+    const el = document.createElement('div')
+    el.className = 'card'
+    el.innerHTML = `<div class="card__flip">
+      <div class="face front"><svg class="heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg><p class="word">${c.word}</p><p class="tip">「 轻触查看语境 · 上滑跳过 」</p></div>
+      <div class="face back"><p class="meta"><span>${c.meta[0]}</span><span>${c.meta[1]}</span></p><p class="snip">${c.snip}</p><p class="ask">${c.ask}</p>
+        <div class="opts">${c.opts.map((o) => `<div class="opt"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>${o}</div>`).join('')}</div>
+        <div class="prog"><span class="dots">${'<i class="dot"></i>'.repeat(4)}</span><span class="pn">题组 3 / 4</span></div></div>
+    </div>`
+    cardsEl.appendChild(el)
+    const fw = document.createElement('p')
+    fw.className = 'flyword'
+    fw.textContent = c.word
+    cardsEl.appendChild(fw)
+    return { el, fw, flip: $('.card__flip', el), dots: $$('.dot', el), opts: $$('.opt', el), pn: $('.pn', el), word: $('.word', el) }
+  })
+
+  // ================= 语境透镜（Logo 几何）=================
+  const LOGO_DOTS = [[67, 34, 3.4, 0.42], [58, 43, 4.5, 0.62], [48, 53, 5.6, 0.82], [36, 65, 7.2, 1]]
+  const LENS = { cx: 540, cy: 900, L: 620 }   // Logo 方框中心与边长（帧坐标）
+  const U = (u, v, lens = LENS) => [lens.cx + ((u * 1.12 - 6) - 50) * lens.L / 100, lens.cy + ((v * 1.12 - 6) - 50) * lens.L / 100]
+  // 由弧线起点、终点与半径求圆心（取大弧、顺时针所对的圆心）
+  const ARC = (() => {
+    const [x1, y1, x2, y2, r] = [69, 26, 27, 67, 31]
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy)
+    const h = Math.sqrt(r * r - (d / 2) ** 2)
+    const c1 = [mx - (dy / d) * h, my + (dx / d) * h], c2 = [mx + (dy / d) * h, my - (dx / d) * h]
+    // 大弧顺时针：圆心位于弦的右侧
+    const cross = (c) => dx * (c[1] - y1) - dy * (c[0] - x1)
+    const c = cross(c1) > 0 ? c2 : c1
+    return { cu: c[0], cv: c[1], r }
+  })()
+  const lensSvg = $('#lens')
+  const arcPath = svgEl('path', { fill: 'none', stroke: '#fcf9e8', 'stroke-linecap': 'round', pathLength: 100 }, lensSvg)
+  const lensDots = LOGO_DOTS.map(() => svgEl('circle', { fill: '#fcf9e8' }, lensSvg))
+  const ringOuter = svgEl('circle', { fill: 'none', stroke: '#fcf9e8' }, lensSvg)
+
+  function drawLogo({ lens = LENS, arc = 1, dotPos = null, dotScale = [1, 1, 1, 1], dotAlpha = 1, k = 1, stroke = 4.2 }) {
+    // k: 以透镜圆心为原点的放大倍数（穿过透镜时使用）
+    const [ox, oy] = U(ARC.cu, ARC.cv, lens)
+    const P = (u, v) => { const [x, y] = U(u, v, lens); return [ox + (x - ox) * k, oy + (y - oy) * k] }
+    const [ax, ay] = P(69, 26), [bx, by] = P(27, 67)
+    const R = ARC.r * 1.12 * lens.L / 100 * k
+    arcPath.setAttribute('d', `M${ax} ${ay} A${R} ${R} 0 1 1 ${bx} ${by}`)
+    arcPath.setAttribute('stroke-width', stroke * 1.12 * lens.L / 100 * Math.min(k, 3))
+    arcPath.setAttribute('stroke-dasharray', `${arc * 100} 100`)
+    arcPath.style.opacity = arc > 0 ? 1 : 0
+    LOGO_DOTS.forEach(([u, v, r, a], i) => {
+      const [x, y] = dotPos ? dotPos[i] : P(u, v)
+      const c = lensDots[i]
+      c.setAttribute('cx', x); c.setAttribute('cy', y)
+      c.setAttribute('r', Math.max(0, r * 1.12 * lens.L / 100 * dotScale[i] * (dotPos ? 1 : k)))
+      c.setAttribute('opacity', a * dotAlpha)
+    })
+    return { ox, oy, R }
+  }
+
+  // ================= 世界一：论文 =================
+  const w1 = $('#w1')
+  $('.title', w1).innerHTML = 'Three generations, one shifting sound'.split(' ').map((w) => `<span>${w}</span>`).join(' ')
+  const W1_SENT = 'The field linguist noted that audio archives from elderly community members evidence notable phonological shifts across three successive generations.'
+  $('#w1body').innerHTML = W1_SENT.split(' ').map((w) => (w === 'evidence' ? `<span class="w tw mk" id="w1tw" style="--mk:rgba(168,69,43,.28)">evidence</span>` : `<span class="w">${w}</span>`)).join(' ')
+  const fig = $('.fig', w1)
+  const waveRows = [0, 1, 2].map((g) => {
+    const row = document.createElement('div')
+    row.className = 'wrow'
+    row.style.top = 90 + g * 140 + 'px'
+    row.innerHTML = `<span class="lbl">Gen. ${g + 1}</span>`
+    const svg = svgEl('svg', { viewBox: '0 0 800 120' }, row)
+    const r = rng(11 + g)
+    const bars = []
+    for (let i = 0; i < 64; i++) {
+      const h = 14 + r() * 80 * Math.sin((i / 64) * Math.PI) ** 0.6
+      bars.push({ el: svgEl('rect', { x: i * 12.5, width: 7, rx: 3.5, fill: '#1f1d19' }, svg), h })
+    }
+    fig.appendChild(row)
+    return { bars, shift: 18 + g * 13 }
+  })
+  const w1Ring = svgEl('ellipse', { fill: 'none', stroke: '#a8452b', 'stroke-width': 5, 'stroke-linecap': 'round', pathLength: 100 }, $('#w1ring'))
+  const w1Lead = svgEl('path', { fill: 'none', stroke: '#a8452b', 'stroke-width': 4, 'stroke-linecap': 'round', pathLength: 100 }, $('#w1ring'))
+
+  // ================= 世界二：笔记 =================
+  const vialsSvg = $('.vials')
+  const VIALS = [['#3f8f86', 'A · upstream'], ['#c98a2e', 'B · bend'], ['#7d8a3a', 'C · outflow']]
+  const vials = VIALS.map(([col, label], i) => {
+    const g = svgEl('g', {}, vialsSvg)
+    const x = 90 + i * 270
+    svgEl('rect', { x: x - 6, y: 40, width: 132, height: 34, rx: 8, fill: '#1d2a26' }, g)
+    const clip = svgEl('clipPath', { id: `vc${i}` }, g)
+    svgEl('rect', { x, y: 74, width: 120, height: 360, rx: 60 }, clip)
+    const liquid = svgEl('rect', { x, y: 434, width: 120, height: 0, fill: col, 'clip-path': `url(#vc${i})` }, g)
+    const bubbles = [0, 1, 2, 3].map(() => svgEl('circle', { r: 7, fill: 'rgba(255,255,255,.55)', 'clip-path': `url(#vc${i})` }, g))
+    svgEl('rect', { x, y: 74, width: 120, height: 360, rx: 60, fill: 'none', stroke: '#1d2a26', 'stroke-width': 6 }, g)
+    const t = svgEl('text', { x: x + 60, y: 500, 'text-anchor': 'middle', 'font-family': 'Caveat', 'font-size': 46, 'font-weight': 700, fill: '#1d2a26' }, g)
+    t.textContent = label
+    return { g, liquid, bubbles, col, x, level: 0.55 + i * 0.12 }
+  })
+  const scan = svgEl('rect', { x: 40, y: 60, width: 760, height: 8, rx: 4, fill: '#d6e260', opacity: 0 }, vialsSvg)
+  const chartSvg = $('.chart')
+  svgEl('path', { d: 'M20 10 V300 H810', fill: 'none', stroke: '#1d2a26', 'stroke-width': 4 }, chartSvg)
+  const lines = vials.map((v, i) => {
+    const r = rng(40 + i)
+    let d = ''
+    for (let k = 0; k <= 60; k++) {
+      const x = 20 + k * 13
+      const peak = Math.exp(-(((k - (14 + i * 17)) / 3.2) ** 2)) * (150 + i * 30)
+      const y = 280 - 18 - r() * 22 - peak
+      d += (k ? 'L' : 'M') + x + ' ' + y
+    }
+    return svgEl('path', { d, fill: 'none', stroke: v.col, 'stroke-width': 6, 'stroke-linejoin': 'round', pathLength: 100, 'stroke-dasharray': '0 100' }, chartSvg)
+  })
+  const w2Ring = svgEl('ellipse', { fill: 'none', stroke: '#2f7a6f', 'stroke-width': 5, 'stroke-linecap': 'round', pathLength: 100 }, $('#w2ring'))
+
+  // ================= 世界三：数据 =================
+  const plot = $('.plot')
+  svgEl('path', { d: 'M40 20 V640 H920', fill: 'none', stroke: '#252825', 'stroke-width': 5 }, plot)
+  const ax1 = svgEl('text', { x: 920, y: 676, 'text-anchor': 'end', 'font-family': 'Satoshi', 'font-weight': 700, 'font-size': 26, fill: '#252825' }, plot); ax1.textContent = 'GROUP SIZE'
+  const ax2 = svgEl('text', { x: 52, y: 40, 'font-family': 'Satoshi', 'font-weight': 700, 'font-size': 26, fill: '#252825' }, plot); ax2.textContent = 'COLLABORATION'
+  const pr = rng(77)
+  const pts = Array.from({ length: 64 }, () => ({ x: 80 + pr() * 820, y: 80 + pr() * 520, d: pr() * 0.9, el: svgEl('circle', { r: 13, fill: '#252825' }, plot) }))
+  const fit = svgEl('line', { stroke: '#fcf9e8', 'stroke-width': 7, 'stroke-dasharray': '18 14', 'stroke-linecap': 'round' }, plot)
+  const h1 = svgEl('text', { 'font-family': 'Satoshi', 'font-weight': 900, 'font-size': 44, fill: '#fcf9e8' }, plot); h1.textContent = 'H1 ?'
+  const w3Ring = svgEl('ellipse', { fill: 'none', stroke: '#252825', 'stroke-width': 5, 'stroke-linecap': 'round', pathLength: 100 }, $('#w3ring'))
+
+  // 手绘圈：围住目标词（世界坐标）
+  const M = {}
+  function measure() {
+    const fr = $('#frame').getBoundingClientRect()
+    const box = (sel) => { const b = $(sel).getBoundingClientRect(); return { cx: b.left - fr.left + b.width / 2, cy: b.top - fr.top + b.height / 2, w: b.width, h: b.height } }
+    $$('.wclip').forEach((c) => { c.style.visibility = 'visible' })
+    ;['#w1tw', '#w2tw', '#w3tw'].forEach((s, i) => { M[i] = box(s) })
+    $$('.wclip').forEach((c) => { c.style.visibility = '' })
+    const setRing = (el, b) => { el.setAttribute('cx', b.cx); el.setAttribute('cy', b.cy); el.setAttribute('rx', b.w / 2 + 26); el.setAttribute('ry', b.h / 2 + 10); el.setAttribute('transform', `rotate(-4 ${b.cx} ${b.cy})`) }
+    setRing(w1Ring, M[0]); setRing(w2Ring, M[1]); setRing(w3Ring, M[2])
+    w1Lead.setAttribute('d', `M${M[0].cx - 40} ${M[0].cy + M[0].h / 2 + 12} C ${M[0].cx - 120} ${M[0].cy + 120}, 200 ${1420}, 150 ${1462}`)
+    cards.forEach((c, i) => {
+      // 单词在卡片正面的中心（用于飞向透镜）
+      c.el.style.visibility = 'visible'
+      const b = c.word.getBoundingClientRect()
+      M['word' + i] = { cx: b.left - fr.left + b.width / 2, cy: b.top - fr.top + b.height / 2 }
+      const ds = c.dots.map((d) => { const r = d.getBoundingClientRect(); return [r.left - fr.left + r.width / 2, r.top - fr.top + r.height / 2] })
+      M['dots' + i] = ds
+      c.el.style.visibility = ''
+    })
+  }
+
+  // ================= 世界几何（位置、缩放、遮罩半径）=================
+  const SLOTS = [[270, 240], [540, 240], [810, 240]]
+  const GAL = [[320, 640], [760, 980], [320, 1320]]
+  const W_ENTER = [T[0].zoom, T[1].zoom, T[2].zoom]
+  const W_EXIT = [11.0, 19.0, 24.6]
+  const LOGO_END = { cx: 540, cy: 760, L: 420 }
+  function worldGeom(i, t) {
+    const z0 = W_ENTER[i], e0 = W_EXIT[i]
+    if (t < z0) return null
+    const lensR = ARC.r * 1.12 * LENS.L / 100
+    // 进入：随透镜一起放大
+    if (t < e0) {
+      const z = inQuart(seg(t, z0, z0 + 0.85)) * 0.6 + inOutCubic(seg(t, z0, z0 + 0.85)) * 0.4
+      const k = Math.exp(lerp(0, Math.log(16), z))
+      const s0 = (lensR * 0.92 * 2) / 1080
+      const [ox, oy] = U(ARC.cu, ARC.cv)
+      const s = Math.min(1, s0 * k)
+      const cx = lerp(ox, 540, clamp((s - s0) / (1 - s0)))
+      const cy = lerp(oy, 960, clamp((s - s0) / (1 - s0)))
+      return { cx, cy, s, r: lensR * 0.92 * k, k, z }
+    }
+    const thumbR = 92
+    const exit = inOutCubic(seg(t, e0, e0 + 0.6))
+    let cx = lerp(540, SLOTS[i][0], exit), cy = lerp(960, SLOTS[i][1], exit)
+    let s = lerp(1, thumbR / 430, exit), r = lerp(1110, thumbR, outQuart(seg(t, e0, e0 + 0.6)))
+    // 作品集：排成三枚大透镜
+    const g = inOutCubic(seg(t, 25.2 + i * 0.06, 25.95 + i * 0.06))
+    cx = lerp(cx, GAL[i][0], g); cy = lerp(cy, GAL[i][1], g)
+    r = lerp(r, 235, g); s = lerp(s, 235 / 430, g)
+    // 收拢：三枚透镜合进 Logo 的圆
+    const c = inOutCubic(seg(t, 27.25, 27.95))
+    const [lx, ly] = U(ARC.cu, ARC.cv, LOGO_END)
+    const lr = ARC.r * 1.12 * LOGO_END.L / 100 * 0.86
+    cx = lerp(cx, lx, c); cy = lerp(cy, ly, c); r = lerp(r, lr, c); s = lerp(s, lr / 430, c)
+    return { cx, cy, s, r, alpha: 1 - seg(t, 27.75, 28.1) }
+  }
+
+  // ================= 每帧 =================
+  function seek(t) {
+    $('#fade').style.opacity = 1 - outQuart(seg(t, 0, 0.3))
+
+    // ---------- 词卡 ----------
+    let finger = null, tapAt = null
+    cards.forEach((c, i) => {
+      const P = T[i]
+      const on = t >= P.appear && t < P.zoom + 0.6
+      vis(c.el, on && t < P.done + 0.6)
+      if (!on) { vis(c.fw, false); return }
+      const ap = outExpo(seg(t, P.appear, P.appear + 0.5))
+      // 翻面
+      let flipU = P.flip ? spring(seg(t, P.tapFront + 0.05, P.tapFront + 0.75) * 1.2, 0.7, 11) : 1
+      const lift = P.flip ? Math.sin(Math.PI * seg(t, P.tapFront + 0.05, P.tapFront + 0.55)) * 60 : 0
+      // 完成：卡片后退淡出
+      const out = outQuart(seg(t, P.done + 0.05, P.done + 0.45))
+      c.el.style.opacity = ap * (1 - out)
+      c.el.style.transform = `translateY(${(1 - ap) * 120 + out * 30}px) scale(${lerp(0.94, 1, ap) * (1 - out * 0.08)})`
+      c.flip.style.transform = `translateZ(${lift}px) rotateY(${flipU * 180}deg)`
+      // 作答
+      const right = t >= P.tapOpt + 0.05
+      const o = c.opts[0]
+      o.style.borderColor = right ? 'var(--positive)' : ''
+      o.style.color = right ? 'var(--positive)' : ''
+      o.style.background = right ? 'rgba(123,199,164,.12)' : ''
+      o.querySelector('svg').style.display = right ? 'block' : 'none'
+      o.querySelector('svg').style.transform = `scale(${outBack(seg(t, P.tapOpt + 0.05, P.tapOpt + 0.35))})`
+      o.style.transform = `scale(${1 + 0.05 * Math.sin(Math.PI * seg(t, P.tapOpt + 0.05, P.tapOpt + 0.35))})`
+      c.opts[1].style.opacity = right ? 0.4 : 1
+      const fill = t >= P.tapOpt + 0.2
+      c.dots.forEach((d, k) => d.classList.toggle('on', k < 3 || fill))
+      c.dots[3].style.transform = `scale(${fill ? outBack(seg(t, P.tapOpt + 0.2, P.tapOpt + 0.45), 2.4) : 1})`
+      c.pn.textContent = fill ? '题组 4 / 4' : '题组 3 / 4'
+      // 手指
+      const fr = [P.appear + 0.4]
+      if (P.tapFront != null && t >= P.tapFront - 0.55 && t < P.tapFront + 0.25) finger = { x: 560, y: 960, at: P.tapFront, from: [700, 1500], a: P.tapFront - 0.55 }
+      if (t >= P.tapOpt - 0.5 && t < P.tapOpt + 0.35) {
+        const ob = M['opt' + i]
+        finger = { x: ob[0], y: ob[1], at: P.tapOpt, from: [700, 1560], a: P.tapOpt - 0.5 }
+      }
+      if (P.tapFront != null && t >= P.tapFront && t < P.tapFront + 0.5) tapAt = { x: 560, y: 960, t0: P.tapFront }
+      if (t >= P.tapOpt && t < P.tapOpt + 0.5) tapAt = { x: M['opt' + i][0], y: M['opt' + i][1], t0: P.tapOpt }
+    })
+    const fe = $('#finger'), rp = $('#ripple')
+    if (finger) {
+      const u = inOutCubic(seg(t, finger.a, finger.at))
+      const x = lerp(finger.from[0], finger.x, u), y = lerp(finger.from[1], finger.y, u)
+      const press = t >= finger.at && t < finger.at + 0.15 ? 1 : 0
+      fe.style.opacity = Math.min(seg(t, finger.a, finger.a + 0.2), 1 - seg(t, finger.at + 0.12, finger.at + 0.35))
+      fe.style.transform = `translate(${x}px, ${y}px) scale(${1 - press * 0.2})`
+    } else fe.style.opacity = 0
+    if (tapAt) {
+      const u = (t - tapAt.t0) / 0.5
+      rp.style.opacity = (1 - u) * 0.9
+      rp.style.transform = `translate(${tapAt.x}px, ${tapAt.y}px) scale(${0.6 + outQuart(u) * 1.8})`
+    } else rp.style.opacity = 0
+
+    // ---------- 学完：题组四点聚成语境透镜，镜头穿过透镜 ----------
+    let lensDrawn = false
+    cards.forEach((c, i) => {
+      const P = T[i]
+      if (t < P.done || t >= P.zoom + 0.9) { vis(c.fw, false); return }
+      lensDrawn = true
+      const fast = i === 0 ? 1 : 0.7
+      const d = P.done
+      const fly = inOutCubic(seg(t, d, d + 0.6 * fast))
+      const arc = outQuart(seg(t, d + 0.1 * fast, d + 0.75 * fast))
+      const sink = inOutCubic(seg(t, d + 0.15 * fast, d + 0.6 * fast))
+      // 四个点：从卡片进度条飞到 Logo 位置，依次变大
+      const dotPos = LOGO_DOTS.map(([u, v], k) => {
+        const [tx, ty] = U(u, v)
+        const [sx, sy] = M['dots' + i][k]
+        const uk = inOutCubic(seg(t, d + k * 0.06 * fast, d + (0.45 + k * 0.06) * fast))
+        // 弧形路径：中途向外拱起
+        const bow = Math.sin(Math.PI * uk) * 120
+        return [lerp(sx, tx, uk) + bow * 0.6, lerp(sy, ty, uk) - bow]
+      })
+      const dotScale = LOGO_DOTS.map(([, , r], k) => lerp(13 / (r * 1.12 * LENS.L / 100), 1, inOutCubic(seg(t, d + k * 0.06 * fast, d + (0.45 + k * 0.06) * fast))))
+      // 单词飞进最大的点
+      const fw = c.fw
+      const [bx, by] = U(36, 65)
+      vis(fw, sink < 1)
+      fw.style.left = M['word' + i].cx + 'px'; fw.style.top = M['word' + i].cy + 'px'
+      fw.style.transform = `translate(-50%, -50%) translate(${(bx - M['word' + i].cx) * sink}px, ${(by - M['word' + i].cy) * sink}px) scale(${lerp(c.flip ? 0.62 : 1, 0.02, sink)})`
+      fw.style.opacity = 1 - seg(sink, 0.7, 1)
+      if (t < d + 0.15 * fast) fw.style.visibility = 'hidden'
+      // 穿过透镜
+      const g = worldGeom(i, t)
+      const k = g ? g.k : 1
+      const zAlpha = g ? 1 - seg(g.z, 0, 0.35) : 1
+      drawLogo({ arc, dotPos: k > 1.001 ? null : dotPos, dotScale: k > 1.001 ? [1, 1, 1, 1] : dotScale, dotAlpha: zAlpha, k })
+      arcPath.style.opacity = g ? 1 - seg(g.z, 0.6, 1) : 1
+      const lab = $('#lensLabel')
+      const la = outExpo(seg(t, d + 0.75 * fast, d + 1.05 * fast)) * (g ? 1 - seg(g.z, 0, 0.2) : 1)
+      lab.querySelector('b').textContent = c.fw.textContent
+      lab.style.top = LENS.cy + LENS.L / 2 + 30 + 'px'
+      fadeUp(lab, la, 24, 6)
+    })
+    if (!lensDrawn) {
+      // 收尾：三枚透镜收拢后重新画出 Logo
+      const e = seg(t, 27.6, 28.3)
+      if (t >= 27.6) {
+        drawLogo({ lens: LOGO_END, arc: outQuart(e), dotScale: LOGO_DOTS.map((_, k) => outBack(seg(t, 27.8 + k * 0.07, 28.15 + k * 0.07), 2)), dotAlpha: 1 })
+        arcPath.style.opacity = 1
+      } else { arcPath.style.opacity = 0; lensDots.forEach((c) => c.setAttribute('opacity', 0)) }
+      $('#lensLabel').style.opacity = 0
+    }
+
+    // ---------- 世界 ----------
+    ;[1, 2, 3].forEach((n, i) => {
+      const clip = $('#c' + n), world = $('#w' + n)
+      const g = worldGeom(i, t)
+      if (!g || (g.alpha !== undefined && g.alpha <= 0)) { vis(clip, false); return }
+      vis(clip, true)
+      clip.style.clipPath = `circle(${g.r}px at ${g.cx}px ${g.cy}px)`
+      clip.style.opacity = g.alpha ?? 1
+      world.style.transform = `translate(${g.cx - 540}px, ${g.cy - 960}px) scale(${g.s})`
+    })
+    // 缩略图与作品集外圈
+    ringOuter.setAttribute('opacity', 0)
+
+    renderW1(t - W_ENTER[0] + 0.3)
+    renderW2(t - W_ENTER[1] + 0.3)
+    renderW3(t - W_ENTER[2] + 0.6)
+
+    // ---------- 字幕 ----------
+    fadeUp($('#topCap'), outExpo(seg(t, 0.35, 0.85)) * (1 - outQuart(seg(t, 2.6, 2.95))), 30)
+    fadeUp($('#galCap'), outExpo(seg(t, 25.7, 26.2)) * (1 - outQuart(seg(t, 27.1, 27.4))), 30)
+    const end = $('#end')
+    vis(end, t > 28.0)
+    $$('#end > *').forEach((el, k) => fadeUp(el, outExpo(seg(t, 28.05 + k * 0.1, 28.7 + k * 0.1)), 36, 6))
+  }
+
+  // ---------- 世界一 ----------
+  function renderW1(tl) {
+    if (tl < 0) return
+    $$('.title span', w1).forEach((s, k) => { const u = outExpo(seg(tl, 0.35 + k * 0.07, 0.95 + k * 0.07)); s.style.opacity = u; s.style.transform = `translateY(${(1 - u) * 50}px)` })
+    fadeUp($('.by', w1), outExpo(seg(tl, 0.8, 1.3)), 20, 4)
+    fadeUp($('.figcap', w1), outExpo(seg(tl, 0.1, 0.5)), 16, 0)
+    waveRows.forEach((row, g) => {
+      row.bars.forEach((b, k) => {
+        const grow = outBack(seg(tl, 0.15 + g * 0.15 + k * 0.01, 0.5 + g * 0.15 + k * 0.01), 1.4)
+        const inShift = Math.abs(k - row.shift - 6) < 7
+        const pulse = 1 + 0.12 * Math.sin(tl * 6 + k * 0.5 + g)
+        const h = b.h * grow * pulse
+        b.el.setAttribute('y', 60 - h / 2)
+        b.el.setAttribute('height', Math.max(0, h))
+        const hot = inShift && tl > 1.6 + g * 0.25
+        b.el.setAttribute('fill', hot ? '#a8452b' : '#1f1d19')
+      })
+    })
+    $$('#w1body .w').forEach((w, k) => { const u = outQuart(seg(tl, 2.0 + k * 0.035, 2.4 + k * 0.035)); w.style.opacity = u })
+    $('#w1tw').style.setProperty('--hl', outQuart(seg(tl, 3.1, 3.5)))
+    w1Ring.setAttribute('stroke-dasharray', `${outQuart(seg(tl, 3.3, 3.85)) * 100} 100`)
+    w1Lead.setAttribute('stroke-dasharray', `${outQuart(seg(tl, 3.7, 4.1)) * 100} 100`)
+    const note = $('.note', w1)
+    fadeUp(note, outExpo(seg(tl, 3.95, 4.45)), 30, 6)
+    fadeUp($('.cap', w1), outExpo(seg(tl, 4.4, 4.9)), 30, 8)
+  }
+
+  // ---------- 世界二 ----------
+  function renderW2(tl) {
+    if (tl < 0) return
+    const w2 = $('#w2')
+    fadeUp($('.hd', w2), outExpo(seg(tl, 0.3, 0.8)), 30, 4)
+    fadeUp($('.date', w2), outExpo(seg(tl, 0.45, 0.9)), 20, 0)
+    vials.forEach((v, i) => {
+      const drop = spring(seg(tl, 0.5 + i * 0.12, 1.3 + i * 0.12) * 1.2, 0.45, 13)
+      v.g.setAttribute('transform', `translate(0 ${(1 - drop) * -500})`)
+      v.g.setAttribute('opacity', clamp(drop * 3))
+      const lvl = outQuart(seg(tl, 0.9 + i * 0.12, 1.7 + i * 0.12)) * v.level
+      const slosh = Math.sin(tl * 7 + i) * 6 * (1 - seg(tl, 1.4, 2.6))
+      const h = 360 * lvl
+      v.liquid.setAttribute('y', 434 - h + slosh)
+      v.liquid.setAttribute('height', h + 20)
+      v.bubbles.forEach((b, k) => {
+        const p = ((tl * (0.5 + k * 0.17) + k * 0.31 + i * 0.2) % 1)
+        b.setAttribute('cx', v.x + 30 + ((k * 37) % 60))
+        b.setAttribute('cy', 430 - p * h * 0.9)
+        b.setAttribute('opacity', tl > 1.2 ? 0.7 * (1 - p) : 0)
+      })
+    })
+    // 扫描：analyze 的动作
+    const sc = seg(tl, 1.7, 2.5)
+    scan.setAttribute('y', lerp(60, 440, inOutCubic(sc)))
+    scan.setAttribute('opacity', sc > 0 && sc < 1 ? 0.9 : 0)
+    lines.forEach((l, i) => l.setAttribute('stroke-dasharray', `${outQuart(seg(tl, 2.1 + i * 0.1, 2.9 + i * 0.1)) * 100} 100`))
+    fadeUp($('.strip', w2), outExpo(seg(tl, 2.4, 2.9)), 30, 6)
+    $('#w2tw').style.setProperty('--hl', outQuart(seg(tl, 2.9, 3.3)))
+    w2Ring.setAttribute('stroke-dasharray', `${outQuart(seg(tl, 3.1, 3.6)) * 100} 100`)
+    fadeUp($('.hnote', w2), outExpo(seg(tl, 3.4, 3.9)), 24, 4)
+    fadeUp($('.cap', w2), outExpo(seg(tl, 3.6, 4.1)), 30, 8)
+  }
+
+  // ---------- 世界三 ----------
+  function renderW3(tl) {
+    if (tl < 0) return
+    const w3 = $('#w3')
+    $$('.big span', w3).forEach((s, k) => { const u = outExpo(seg(tl, 0.25 + k * 0.1, 0.75 + k * 0.1)); s.style.opacity = u; s.style.transform = `translateX(${(1 - u) * -80}px)` })
+    fadeUp($('.sub', w3), outExpo(seg(tl, 0.5, 0.9)), 16, 0)
+    pts.forEach((p) => {
+      const u = spring(seg(tl, 0.55 + p.d * 0.6, 1.25 + p.d * 0.6) * 1.2, 0.5, 13)
+      p.el.setAttribute('cx', p.x)
+      p.el.setAttribute('cy', lerp(-200, p.y, u) + Math.sin(tl * 2 + p.x) * 3)
+      p.el.setAttribute('opacity', clamp(u * 3))
+    })
+    // 拟合线试图找到趋势，最后几乎是平的
+    const f = seg(tl, 1.6, 2.6)
+    const ang = lerp(-0.62, -0.05, outBack(f, 1.2)) + Math.sin(tl * 3) * 0.02 * f
+    const cx = 480, cy = 340, L = 470
+    fit.setAttribute('x1', cx - Math.cos(ang) * L); fit.setAttribute('y1', cy - Math.sin(ang) * L)
+    fit.setAttribute('x2', cx + Math.cos(ang) * L); fit.setAttribute('y2', cy + Math.sin(ang) * L)
+    fit.setAttribute('opacity', f > 0 ? 1 : 0)
+    h1.setAttribute('x', cx + Math.cos(ang) * L - 110); h1.setAttribute('y', cy + Math.sin(ang) * L - 24)
+    h1.setAttribute('opacity', outQuart(seg(tl, 2.2, 2.5)))
+    fadeUp($('.sent', w3), outExpo(seg(tl, 1.9, 2.4)), 30, 6)
+    $('#w3tw').style.setProperty('--hl', outQuart(seg(tl, 2.4, 2.75)))
+    w3Ring.setAttribute('stroke-dasharray', `${outQuart(seg(tl, 2.55, 3.0)) * 100} 100`)
+    fadeUp($('.pill', w3), outExpo(seg(tl, 2.75, 3.2)), 24, 4)
+    fadeUp($('.cap', w3), outExpo(seg(tl, 2.9, 3.35)), 30, 8)
+  }
+
+  window.__duration = 30
+  window.__seek = seek
+  window.__ready = document.fonts.ready.then(() => {
+    // 记录每张卡正确选项的中心
+    measure()
+    const fr = $('#frame').getBoundingClientRect()
+    cards.forEach((c, i) => {
+      c.el.style.visibility = 'visible'
+      c.flip.style.transform = 'rotateY(180deg)'
+      const b = c.opts[0].getBoundingClientRect()
+      M['opt' + i] = [b.left - fr.left + b.width / 2, b.top - fr.top + b.height / 2]
+      const ds = c.dots.map((d) => { const r = d.getBoundingClientRect(); return [r.left - fr.left + r.width / 2, r.top - fr.top + r.height / 2] })
+      M['dots' + i] = ds
+      c.flip.style.transform = ''
+      c.el.style.visibility = ''
+    })
+    seek(0)
+  })
+  if (location.search.includes('play')) {
+    window.__ready.then(() => {
+      const t0 = performance.now()
+      const tick = () => { seek(((performance.now() - t0) / 1000) % 30); requestAnimationFrame(tick) }
+      requestAnimationFrame(tick)
+    })
+  }
+})()
+</script>
+</body>
+</html>

@@ -2,11 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>Contexta 15s · 竖屏宣传短片</title>
+<title>Contexta 15s · 竖屏宣传短片 v2</title>
 <!--
-  15 秒 1080×1920 竖屏短片的合成页。每一帧都是时间 t 的纯函数：window.__seek(t) 设置画面。
-  一镜到底：Logo 的字标落成小程序顶栏 → 划走一个词 → 翻面 → 进入语境题 → 误选与辨析 → 学完印章 → 紫灰从印章处铺满全屏收尾。
-  预览：在浏览器打开本文件，加 ?play 自动播放。
+  15 秒 1080×1920 竖屏短片 v2。每一帧都是时间 t 的纯函数：window.__seek(t)。
+  一镜到底：满屏 evidence → 拉远成句中一词 → 3 秒判断「是动词吗」→ 揭晓主谓宾
+  → 马克笔扩成色块，三句真实语境快切 → 最后一句收进小程序 → 误选与辨析 → 紫灰铺满收尾。
+  句子与题目全部取自 contexta-server 本地库中已审核（approved）的 evidence / analyze 内容。
+  预览：浏览器打开本文件并加 ?play。
 -->
 <style>
 @font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-400-normal.woff2"); font-weight: 400; }
@@ -20,216 +22,171 @@
 :root {
   --ivory: #fcf9e8; --canvas: #252825; --outside: #1c1f1c; --surface: #2e312e; --surface-muted: #363a36;
   --ink: #f3f4ef; --ink-2: #c7cbc4; --ink-3: #a5aca3; --line: #4b504b; --line-strong: #687068;
-  --accent: #9a90ba; --accent-strong: #b8b0d4; --positive: #7bc7a4; --negative: #e0a095; --favourite: #e5a05c;
+  --accent: #9a90ba; --accent-strong: #b8b0d4; --positive: #7bc7a4; --negative: #e0a095;
   --cn: "Tsanger YuYang", "PingFang SC", sans-serif;
   --en: "Satoshi", "Helvetica Neue", sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--outside); }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
 body { font-family: var(--en); color: var(--ink); -webkit-font-smoothing: antialiased; }
+#frame { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--canvas); }
+.hl { position: relative; font-weight: 900; z-index: 0; }
+.hl::before { content: ""; position: absolute; left: -0.06em; right: -0.06em; bottom: 0.06em; height: 0.3em; background: var(--hlc, rgba(154,144,186,.55)); transform-origin: 0 50%; transform: scaleX(var(--hl, 0)); z-index: -1; }
 
-#frame { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: radial-gradient(120% 70% at 50% 38%, #2b2e2b 0%, var(--outside) 70%); }
-#cam { position: absolute; inset: 0; transform-origin: 540px 480px; will-change: transform; }
+/* ---------- 钩子 ---------- */
+#hook { position: absolute; inset: 0; }
+#hookCap { position: absolute; left: 0; right: 0; top: 520px; text-align: center; font: 700 68px/1.2 var(--cn); }
+#nTag { position: absolute; left: 0; right: 0; top: 1150px; text-align: center; }
+.tag { display: inline-flex; align-items: baseline; gap: 14px; padding: 16px 30px; border-radius: 999px; border: 2px solid var(--line-strong); font: 700 44px/1 var(--cn); color: var(--ink); background: var(--canvas); white-space: nowrap; }
+.tag i { font: 700 40px/1 var(--en); font-style: normal; color: var(--accent-strong); }
+#cap2 { position: absolute; left: 0; right: 0; top: 340px; text-align: center; font: 700 68px/1.2 var(--cn); }
+#sentWrap { position: absolute; left: 80px; top: 600px; width: 920px; font: 500 58px/1.8 var(--en); color: var(--ink); will-change: transform; }
+#sw { display: inline-block; }
+.lab { position: absolute; font: 700 32px/1 var(--cn); color: var(--accent-strong); white-space: nowrap; }
+.uline { position: absolute; height: 5px; border-radius: 3px; background: var(--accent); transform-origin: 0 50%; opacity: 0; }
 
-/* 标题字幕 */
-#caps { position: absolute; left: 0; right: 0; top: 150px; height: 240px; }
-.cap { position: absolute; left: 0; right: 0; text-align: center; font: 700 84px/1.18 var(--cn); letter-spacing: -0.01em; color: var(--ink); opacity: 0; will-change: transform, opacity, filter; }
-.cap small { display: block; margin-top: 18px; font: 400 40px/1.3 var(--cn); color: var(--ink-2); letter-spacing: 0.02em; }
-.cap em { font-style: normal; color: var(--accent-strong); }
+#tf { position: absolute; left: 0; right: 0; top: 1250px; text-align: center; }
+#tf h3 { font: 700 62px/1.2 var(--cn); }
+#tf h3 b { font: 900 62px/1 var(--en); color: var(--accent-strong); }
+.pills { margin-top: 64px; display: flex; justify-content: center; gap: 40px; }
+.pill { position: relative; width: 380px; height: 150px; border-radius: 40px; border: 3px solid var(--line-strong); display: flex; align-items: center; justify-content: center; gap: 18px; font: 700 64px/1 var(--cn); background: var(--surface); }
+.pill svg { width: 52px; height: 52px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; display: none; }
+.timer { margin: 60px auto 0; width: 560px; height: 10px; border-radius: 6px; background: var(--surface-muted); overflow: hidden; }
+.timer i { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; }
+#count { position: absolute; left: 0; right: 0; top: 1660px; text-align: center; font: 900 120px/1 var(--en); color: var(--accent-strong); }
+#trans { position: absolute; left: 90px; right: 90px; top: 1320px; font: 400 52px/1.6 var(--cn); color: var(--ink-2); }
+#trans b { color: var(--ink); font-weight: 700; }
 
-/* 开场 Logo */
-#intro { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; }
-#introMark { position: absolute; left: 400px; top: 640px; width: 280px; height: 280px; }
-#introMark path { stroke-dasharray: 200; }
-#introWord { position: absolute; left: 0; right: 0; top: 960px; text-align: center; font: 700 120px/1 "Jaldi", sans-serif; letter-spacing: 0.04em; color: var(--ivory); transform-origin: 540px 50%; }
-#introCn { position: absolute; left: 0; right: 0; top: 1110px; text-align: center; font: 400 46px/1 var(--cn); letter-spacing: 0.3em; color: var(--ink-3); }
+/* ---------- 快切色块 ---------- */
+.card { position: absolute; inset: 0; clip-path: circle(0px at 540px 960px); visibility: hidden; }
+.card .s { position: absolute; left: 80px; width: 920px; top: 620px; font: 500 64px/1.42 var(--en); }
+.card .t { position: absolute; left: 80px; top: 1280px; }
+.card .tag { border-color: currentColor; background: transparent; color: inherit; }
+.card .tag i { color: inherit; }
+#cA { background: var(--accent); color: var(--canvas); --hlc: rgba(252,249,232,.6); }
+#cB { background: var(--ivory); color: var(--canvas); --hlc: rgba(154,144,186,.55); }
+#cC { background: var(--canvas); color: var(--ink); }
+#montCap { position: absolute; left: 0; right: 0; top: 330px; display: flex; justify-content: center; }
+#montCap span { padding: 22px 40px; border-radius: 999px; background: var(--canvas); color: var(--ink); font: 700 50px/1 var(--cn); box-shadow: 0 16px 40px -16px rgba(0,0,0,.5); }
 
-/* 手机 */
-#phone { position: absolute; left: 50%; top: 440px; width: 390px; height: 860px; margin-left: -195px; transform-origin: 50% 0; }
+/* ---------- 手机 ---------- */
+#phoneCap { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font: 700 72px/1.2 var(--cn); }
+#phoneCap small { display: block; margin-top: 14px; font: 400 42px/1.3 var(--cn); color: var(--ink-2); }
+#phone { position: absolute; left: 50%; top: 400px; width: 390px; height: 860px; margin-left: -195px; transform-origin: 50% 0; visibility: hidden; }
 .device { position: absolute; inset: -10px; border-radius: 62px; background: #111311; box-shadow: 0 60px 120px -30px rgba(0,0,0,.8), inset 0 0 0 2px #3a3d3a; }
 .screen { position: absolute; inset: 0; border-radius: 52px; overflow: hidden; background: var(--canvas); }
-.sb { height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 34px; font: 700 15px/1 -apple-system, "Helvetica Neue", sans-serif; color: var(--ink); }
+.sb { height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 34px; font: 700 15px/1 -apple-system, "Helvetica Neue", sans-serif; }
 .sb__island { position: absolute; left: 50%; top: 11px; width: 118px; height: 34px; margin-left: -59px; border-radius: 20px; background: #000; }
-.sb__icons { display: flex; gap: 6px; align-items: center; }
 .sb__bat { width: 25px; height: 12px; border: 1.5px solid var(--ink-2); border-radius: 4px; padding: 1.5px; } .sb__bat i { display: block; height: 100%; width: 70%; background: var(--ink); border-radius: 1.5px; }
 .nav { position: relative; height: 44px; display: flex; align-items: center; justify-content: center; }
-.nav__brand { font: 700 23px/1 "Jaldi", sans-serif; letter-spacing: 0.04em; color: var(--ink); padding-top: 3px; }
+.nav__brand { font: 700 23px/1 "Jaldi", sans-serif; letter-spacing: 0.04em; padding-top: 3px; }
 .capsule { position: absolute; right: 10px; top: 6px; width: 87px; height: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.18); display: flex; align-items: center; }
 .capsule span { flex: 1; display: flex; justify-content: center; align-items: center; gap: 3px; }
 .capsule span + span { border-left: 1px solid rgba(255,255,255,.2); height: 18px; }
 .capsule i { width: 4px; height: 4px; border-radius: 50%; background: var(--ink); }
 .capsule b { width: 16px; height: 16px; border: 2px solid var(--ink); border-radius: 50%; position: relative; } .capsule b::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--ink); }
-
-.status { height: 32px; margin: 18px 18px 12px; display: flex; justify-content: flex-end; align-items: center; gap: 4px; font: 700 13px/1 var(--en); color: var(--ink-2); }
-.status__book { font-family: var(--cn); color: var(--accent-strong); font-weight: 700; }
-.status__num { color: var(--accent-strong); font-weight: 900; display: inline-block; min-width: 3ch; text-align: center; font-variant-numeric: tabular-nums; }
-
-.stage { position: absolute; left: 14px; right: 14px; top: 156px; height: 590px; perspective: 1400px; }
-.layer { position: absolute; top: 0; bottom: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
-.layer--b { left: 10px; right: 10px; transform: translateY(16px); background: #262926; }
-.layer--m { left: 5px; right: 5px; transform: translateY(8px); background: #2a2d2a; }
-.card { position: absolute; left: 0; right: 0; top: 0; bottom: 18px; transform-style: preserve-3d; will-change: transform; }
-.face { position: absolute; inset: 0; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 24px 40px -24px rgba(0,0,0,.7); }
-.front { display: grid; grid-template-rows: 60px 1fr 46px; padding: 8px 16px 12px; }
-.front__top { display: flex; justify-content: flex-end; align-items: center; }
-.front__word { align-self: center; text-align: center; font: 700 56px/1.1 var(--en); letter-spacing: -0.01em; }
-.front__tip { text-align: center; font: 400 12px/1 var(--cn); color: var(--ink-3); align-self: center; letter-spacing: .02em; }
-.back { transform: rotateY(180deg); }
-.ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.heart { color: var(--ink-2); } .heart.on { color: var(--favourite); fill: var(--favourite); }
-
-.pane { position: absolute; inset: 0; padding: 18px 18px 16px; display: flex; flex-direction: column; }
-.pane > * { flex-shrink: 0; }
-.def__head { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
-.def__word { font: 700 36px/1.15 var(--en); }
-.def__phon { margin-top: 6px; font: 400 15px/1.5 -apple-system, "Helvetica Neue", sans-serif; color: var(--ink-2); }
-.def__phon span { font: 400 12px/1 var(--cn); color: var(--ink-3); margin-right: 4px; }
-.def__sense { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); font: 700 19px/1.5 var(--cn); }
-.def__sense span { font: 700 14px/1 var(--en); color: var(--accent-strong); margin-right: 6px; }
-.rel { margin-top: 16px; display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-.rel + .rel { margin-top: 12px; }
-.rel b { font: 700 16px/1.3 var(--en); } .rel span { font: 400 14px/1.4 var(--cn); color: var(--ink-2); } .rel span i { font-style: normal; font-size: 11px; color: var(--ink-3); border: 1px solid var(--line-strong); border-radius: 5px; padding: 1px 6px; margin-right: 8px; }
-.btn { margin-top: auto; height: 50px; border-radius: 15px; background: var(--accent); color: var(--canvas); display: flex; align-items: center; justify-content: center; font: 700 16px/1 var(--cn); will-change: transform; }
-.btn b { font-family: var(--en); margin: 0 4px; }
-
+.qcard { position: absolute; left: 14px; right: 14px; top: 108px; bottom: 0; border: 1px solid var(--line); border-bottom: 0; border-radius: 16px 16px 0 0; background: var(--surface); padding: 18px 18px 0; }
 .q__meta { display: flex; align-items: center; gap: 8px; font: 700 13px/1 var(--cn); }
-.q__book { color: var(--accent-strong); } .q__tag { color: var(--ink-3); font-weight: 400; font-size: 11px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; }
-.q__no { margin-left: auto; color: var(--ink-2); font-family: var(--en); }
+.q__book { color: var(--accent-strong); } .q__no { margin-left: auto; color: var(--ink-2); font-family: var(--en); }
 .q__wrap { overflow: hidden; }
 .q__passage { padding-top: 14px; font: 400 16px/1.62 var(--en); }
-.mark { position: relative; font-weight: 900; }
-.mark::before { content: ""; position: absolute; left: -1px; right: -1px; bottom: 1px; height: 30%; background: rgba(154,144,186,.5); transform-origin: 0 50%; transform: scaleX(var(--hl, 0)); z-index: -1; }
-.q__passage { position: relative; z-index: 0; }
 .q__prompt { margin-top: 12px; font: 700 16px/1.45 var(--en); }
 .choices { margin-top: 12px; display: grid; gap: 8px; }
-.choice { position: relative; height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; font: 500 16px/1 var(--en); background: var(--surface); }
-.choice > b { font: 700 13px/1 var(--en); color: var(--ink-3); width: 12px; }
-.choice .st { margin-left: auto; display: flex; opacity: 0; }
-.choice .st .ico { width: 20px; height: 20px; stroke-width: 2.2; }
+.choice { position: relative; min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 12px; font: 500 15px/1.3 var(--en); background: var(--surface); }
+.choice > b { font: 700 13px/1 var(--en); color: var(--ink-3); width: 12px; flex: none; }
+.choice .st { margin-left: auto; display: flex; opacity: 0; flex: none; }
+.ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .compare { margin-top: 12px; padding: 13px 15px; border-radius: 12px; background: var(--surface-muted); font: 400 14px/1.6 var(--cn); color: var(--ink-2); opacity: 0; }
 .compare p:first-child { font: 700 13px/1 var(--cn); color: var(--accent-strong); margin-bottom: 8px; }
-.compare b { font: 700 14px/1 var(--en); color: var(--ink); }
+.compare b { font: 700 14px/1.3 var(--en); color: var(--ink); }
+#finger { position: absolute; left: 0; top: 0; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(252,249,232,.3); box-shadow: 0 0 0 2px rgba(252,249,232,.6), 0 6px 16px rgba(0,0,0,.35); opacity: 0; }
+#ripple { position: absolute; left: 0; top: 0; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 2px solid rgba(252,249,232,.75); opacity: 0; }
+#ghost { position: absolute; font: 500 64px/1.42 var(--en); color: var(--ink); transform-origin: 0 0; visibility: hidden; }
 
-.done { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(46,49,46,.97); opacity: 0; }
-.done img { width: 150px; height: 150px; }
-.done__word { margin-top: 18px; font: 700 34px/1.1 var(--en); }
-.done__note { margin-top: 6px; font: 400 15px/1.4 var(--cn); color: var(--ink-2); }
-
-.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; border-top: 1px solid var(--line); background: var(--surface); display: flex; padding: 8px 10px 26px; }
-.tabbar span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font: 400 11px/1 var(--cn); color: var(--ink-3); }
-.tabbar span.on { color: var(--accent-strong); }
-.tabbar .ico { width: 22px; height: 22px; }
-
-/* 手指 */
-#finger { position: absolute; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 50%; background: rgba(252,249,232,.28); box-shadow: 0 0 0 3px rgba(252,249,232,.55), 0 10px 30px rgba(0,0,0,.35); opacity: 0; will-change: transform, opacity; }
-#ripple { position: absolute; left: 0; top: 0; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 50%; border: 4px solid rgba(252,249,232,.7); opacity: 0; }
-
-/* 收尾 */
+/* ---------- 收尾 ---------- */
 #flood { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); transform: scale(0); }
-#end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--canvas); opacity: 0; }
-#end svg { width: 200px; height: 200px; }
-#end .w { margin-top: 30px; font: 700 110px/1 "Jaldi", sans-serif; letter-spacing: 0.04em; }
-#end .c { margin-top: 18px; font: 700 52px/1 var(--cn); letter-spacing: 0.24em; padding-left: 0.24em; }
-#end .line { margin-top: 90px; font: 700 62px/1.3 var(--cn); }
-#end .search { margin-top: 56px; display: flex; align-items: center; gap: 20px; padding: 26px 44px; border-radius: 999px; background: var(--canvas); color: var(--ink); font: 400 40px/1 var(--cn); }
+#end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--canvas); visibility: hidden; }
+#end svg.mark { width: 190px; height: 190px; }
+#end .w { margin-top: 28px; font: 700 110px/1 "Jaldi", sans-serif; letter-spacing: 0.04em; }
+#end .c { margin-top: 18px; font: 700 50px/1 var(--cn); letter-spacing: 0.24em; padding-left: 0.24em; }
+#end .line { margin-top: 90px; font: 700 64px/1.3 var(--cn); }
+#end .search { margin-top: 56px; display: flex; align-items: center; gap: 20px; padding: 26px 44px; border-radius: 999px; background: var(--canvas); color: var(--ink); font: 400 42px/1 var(--cn); }
 #end .search b { font-weight: 700; color: var(--accent-strong); }
 #end .search svg { width: 44px; height: 44px; stroke: var(--ink-2); }
+#fade { position: absolute; inset: 0; background: #000; pointer-events: none; }
 </style>
 </head>
 <body>
 <div id="frame">
-  <div id="cam">
-
-    <div id="phone">
-      <div class="device"></div>
-      <div class="screen">
-        <div class="sb"><span>9:41</span><div class="sb__island"></div><span class="sb__icons">
-          <svg width="18" height="12" viewBox="0 0 18 12"><g fill="#f3f4ef"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></g></svg>
-          <span class="sb__bat"><i></i></span></span></div>
-        <div class="nav"><span class="nav__brand" id="navBrand">Contexta</span><div class="capsule"><span><i></i><i></i><i></i></span><span><b></b></span></div></div>
-        <div class="status"><span class="status__book">托福语境练习 ·</span> <span class="status__num" id="num">127</span> / 1600</div>
-
-        <div class="stage">
-          <div class="layer layer--b"></div>
-          <div class="layer layer--m"></div>
-          <!-- 被划走的上一张卡 -->
-          <div class="card" id="cardSkip"><div class="face front">
-            <div class="front__top"><svg class="ico heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg></div>
-            <div class="front__word">deliberate</div>
-            <div class="front__tip">「 轻触查看语境 · 上滑跳过 」</div>
-          </div></div>
-          <div class="card" id="card">
-            <div class="face front">
-              <div class="front__top"><svg class="ico heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg></div>
-              <div class="front__word">prized</div>
-              <div class="front__tip">「 轻触查看语境 · 上滑跳过 」</div>
-            </div>
-            <div class="face back">
-              <div class="pane" id="def">
-                <div class="def__head"><span class="def__word">prized</span><svg class="ico heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg></div>
-                <p class="def__phon"><span>英</span> [praɪzd]　<span>美</span> [praɪzd]</p>
-                <p class="def__sense"><span>adj.</span>珍贵的；备受重视的</p>
-                <div class="rel"><b>prize</b><span><i>词族</i>珍视；奖项</span></div>
-                <div class="rel"><b>highly prized</b><span><i>搭配</i>备受珍视的</span></div>
-                <div class="btn" id="startBtn">开始学习 · <b>6</b> 道题</div>
-              </div>
-              <div class="pane" id="q" style="opacity:0">
-                <div class="q__meta"><span class="q__book">托福语境练习</span><span class="q__tag">非官方内容</span><span class="q__no">3 / 6</span></div>
-                <div class="q__wrap" id="qwrap"><p class="q__passage">The library keeps several handwritten field journals in a climate-controlled room because researchers still consider them highly <span class="mark" id="mark">prized</span> records of the region’s early plant life.</p></div>
-                <p class="q__prompt">The word “prized” in the passage is closest in meaning to:</p>
-                <div class="choices">
-                  <div class="choice" id="chA"><b>A</b>valued<span class="st"><svg class="ico" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></div>
-                  <div class="choice" id="chB"><b>B</b>universal</div>
-                  <div class="choice" id="chC"><b>C</b>uncommon<span class="st"><svg class="ico" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></div>
-                  <div class="choice" id="chD"><b>D</b>preserved</div>
-                </div>
-                <div class="compare" id="compare"><p>最强迷惑项对比</p><p><b>uncommon</b> 只说“不常见”；<b>prized</b> 强调“被珍惜、被认为有价值”，对应 valued。</p></div>
-              </div>
-              <div class="done" id="done"><img id="stamp" src="../assets/img/completion-stamp.webp" alt=""><p class="done__word">prized</p><p class="done__note">题组完成 · 已计入学完</p></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tabbar">
-          <span><svg class="ico" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg>收藏</span>
-          <span class="on"><svg class="ico" viewBox="0 0 24 24"><path d="M4 8.5 12 4l8 4.5-8 4.5-8-4.5Z"/><path d="m4 12.5 8 4.5 8-4.5M4 16.5 12 21l8-4.5"/></svg>学习</span>
-          <span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>今日</span>
-          <span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.3-3.6 4.2-5.4 7.5-5.4s6.2 1.8 7.5 5.4"/></svg>我的</span>
-        </div>
+  <!-- 钩子：evidence -->
+  <div id="hook">
+    <div id="hookCap">你肯定认识它。</div>
+    <div id="nTag"><span class="tag"><i>n.</i>证据</span></div>
+    <div id="cap2">那这句里呢？</div>
+    <div id="sentWrap"><span class="w">The field linguist noted that </span><span class="w" id="subj">audio archives</span><span class="w"> from elderly community members </span><span class="hl" id="sw">evidence</span><span class="w"> </span><span class="w" id="obj">notable phonological shifts</span><span class="w"> across three successive generations.</span></div>
+    <div class="lab" id="labS">主语</div><div class="lab" id="labO">宾语</div>
+    <div id="tf">
+      <h3>这里的 <b>evidence</b> 是动词吗？</h3>
+      <div class="pills">
+        <div class="pill" id="pYes"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>是</div>
+        <div class="pill" id="pNo">不是</div>
       </div>
+      <div class="timer"><i id="timerBar"></i></div>
     </div>
-
-    <div id="ripple"></div>
-    <div id="finger"></div>
+    <div id="count">3</div>
+    <div id="trans">录音档案<b>证实</b>了连续三代人之间显著的语音演变。</div>
   </div>
 
-  <div id="caps">
-      <div class="cap" data-c="0">选一个词<small>不想学，划走就换</small></div>
-      <div class="cap" data-c="1">先认识它<small>音标 · 释义 · 搭配</small></div>
-      <div class="cap" data-c="2">再放进<em>语境</em>里练<small>每个词，一组语境题</small></div>
-      <div class="cap" data-c="3">选错了？<small>马上告诉你为什么</small></div>
-      <div class="cap" data-c="4">这个词，学完了<small>进度只增不减</small></div>
-    </div>
-
-  <div id="intro">
-    <svg id="introMark" viewBox="0 0 100 100">
-      <g fill="none" stroke="#fcf9e8" stroke-linecap="round" transform="matrix(1.12 0 0 1.12 -6 -6)"><path id="arc" d="M69 26 A31 31 0 1 1 27 67" stroke-width="4.2"/></g>
-      <g fill="#fcf9e8" transform="matrix(1.12 0 0 1.12 -6 -6)">
-        <circle class="dot" cx="67" cy="34" r="3.4" opacity="0.42"/><circle class="dot" cx="58" cy="43" r="4.5" opacity="0.62"/><circle class="dot" cx="48" cy="53" r="5.6" opacity="0.82"/><circle class="dot" cx="36" cy="65" r="7.2"/>
-      </g>
-    </svg>
-    <div id="introWord">Contexta</div>
-    <div id="introCn">语境自修</div>
+  <!-- 快切：同一个词，换个语境 -->
+  <div class="card" id="cA">
+    <p class="s">Before publishing their project findings, the team will <span class="hl" id="wA">analyze</span> the water samples to detect chemical traces.</p>
+    <div class="t"><span class="tag"><i>v.</i>仔细分析</span></div>
   </div>
+  <div class="card" id="cB">
+    <p class="s">Social science undergraduates <span class="hl" id="wB">analyze</span> survey responses to identify shifts in student behavior across campus dormitories.</p>
+    <div class="t"><span class="tag"><i>v.</i>评估趋势与规律</span></div>
+  </div>
+  <div class="card" id="cC">
+    <p class="s" id="sC">The psychology seminar evaluated survey outcomes to identify factors shaping group collaboration, yet the preliminary data provided little empirical <span class="hl" id="wC">evidence</span> to support the original hypothesis.</p>
+    <div class="t" id="tC"><span class="tag"><i>n.</i>证据</span></div>
+  </div>
+  <div id="montCap"><span>同一个词，换个语境就换个意思</span></div>
+
+  <!-- 小程序 -->
+  <div id="phoneCap">选错了？<small>也知道错在哪</small></div>
+  <div id="phone">
+    <div class="device"></div>
+    <div class="screen">
+      <div class="sb"><span>9:41</span><div class="sb__island"></div><span style="display:flex;gap:6px;align-items:center">
+        <svg width="18" height="12" viewBox="0 0 18 12"><g fill="#f3f4ef"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></g></svg>
+        <span class="sb__bat"><i></i></span></span></div>
+      <div class="nav"><span class="nav__brand">Contexta</span><div class="capsule"><span><i></i><i></i><i></i></span><span><b></b></span></div></div>
+      <div class="qcard">
+        <div class="q__meta"><span class="q__book">学术阅读词汇</span><span class="q__no">1 / 4</span></div>
+        <div class="q__wrap" id="qwrap"><p class="q__passage" id="qp">The psychology seminar evaluated survey outcomes to identify factors shaping group collaboration, yet the preliminary data provided little empirical <span class="hl" style="--hl:1">evidence</span> to support the original hypothesis.</p></div>
+        <p class="q__prompt">In the sentence above, what does the word “evidence” most nearly mean?</p>
+        <div class="choices">
+          <div class="choice"><b>A</b>formal opposition or protest</div>
+          <div class="choice" id="chB"><b>B</b>factual information supporting a claim<span class="st"><svg class="ico" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></div>
+          <div class="choice"><b>C</b>administrative permission or approval</div>
+          <div class="choice" id="chD"><b>D</b>a speculative thought or rumor<span class="st"><svg class="ico" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></div>
+        </div>
+        <div class="compare" id="compare"><p>最强迷惑项对比</p><p><b>a speculative thought or rumor</b> 强调主观推测或无根据的传言，与 empirical（基于实证的）修饰的客观事实相悖。</p></div>
+      </div>
+      <div id="ripple"></div><div id="finger"></div>
+    </div>
+  </div>
+  <div id="ghost"></div>
 
   <div id="flood"></div>
   <div id="end">
-    <svg viewBox="0 0 100 100"><g fill="none" stroke="#252825" stroke-linecap="round" transform="matrix(1.12 0 0 1.12 -6 -6)"><path d="M69 26 A31 31 0 1 1 27 67" stroke-width="4.2"/></g><g fill="#252825" transform="matrix(1.12 0 0 1.12 -6 -6)"><circle cx="67" cy="34" r="3.4" opacity="0.42"/><circle cx="58" cy="43" r="4.5" opacity="0.62"/><circle cx="48" cy="53" r="5.6" opacity="0.82"/><circle cx="36" cy="65" r="7.2"/></g></svg>
+    <svg class="mark" viewBox="0 0 100 100"><g fill="none" stroke="#252825" stroke-linecap="round" transform="matrix(1.12 0 0 1.12 -6 -6)"><path d="M69 26 A31 31 0 1 1 27 67" stroke-width="4.2"/></g><g fill="#252825" transform="matrix(1.12 0 0 1.12 -6 -6)"><circle cx="67" cy="34" r="3.4" opacity="0.42"/><circle cx="58" cy="43" r="4.5" opacity="0.62"/><circle cx="48" cy="53" r="5.6" opacity="0.82"/><circle cx="36" cy="65" r="7.2"/></g></svg>
     <div class="w">Contexta</div>
     <div class="c">语境自修</div>
     <div class="line">把单词放回语境里练</div>
     <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>微信搜索 <b>语境自修</b></div>
   </div>
+  <div id="fade"></div>
 </div>
 
 <script>
@@ -241,202 +198,219 @@ body { font-family: var(--en); color: var(--ink); -webkit-font-smoothing: antial
   const outExpo = (u) => (u >= 1 ? 1 : 1 - Math.pow(2, -10 * u))
   const outQuart = (u) => 1 - Math.pow(1 - u, 4)
   const inOut = (u) => (u < 0.5 ? 8 * u ** 4 : 1 - Math.pow(-2 * u + 2, 4) / 2)
-  const outBack = (u, s = 1.6) => 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2)
-  // 阻尼弹簧：0→1，带一次轻微过冲
-  const spring = (u, z = 0.55, w = 14) => (u <= 0 ? 0 : 1 - Math.exp(-z * w * u) * Math.cos(w * Math.sqrt(1 - z * z) * u))
-
-  const S = 1.8                       // 手机缩放
-  const PH = { x: 540 - 195 * S, y: 440 } // 手机左上角（帧坐标）
-  const P = (x, y) => [PH.x + x * S, PH.y + y * S] // 屏幕坐标 → 帧坐标
-
-  const caps = [...document.querySelectorAll('.cap')]
-  const CAP_WINDOWS = [[2.15, 3.75], [3.75, 5.55], [5.55, 8.3], [8.3, 11.0], [11.0, 12.8]]
-
-  // 手指路径关键帧：[时间, 屏幕x, 屏幕y, 按下]
-  const FINGER = [
-    [2.2, 300, 760, 0], [2.55, 195, 520, 0], [2.65, 195, 520, 1], [3.05, 195, 260, 1], [3.15, 205, 230, 0],
-    [3.7, 205, 440, 0], [3.95, 195, 470, 0], [4.05, 195, 470, 1], [4.2, 195, 470, 0],
-    [4.9, 220, 690, 0], [5.15, 195, 700, 0], [5.25, 195, 700, 1], [5.4, 195, 700, 0],
-    [7.2, 260, 640, 0], [7.75, 120, 0, 0], [7.85, 120, 0, 1], [8.0, 120, 0, 0], [8.7, 330, 900, 0],
-  ]
-  let choiceCY = 0
-
-  function finger(t) {
-    if (t < FINGER[0][0] || t > FINGER[FINGER.length - 1][0]) return null
-    let i = 0
-    while (i < FINGER.length - 2 && t > FINGER[i + 1][0]) i++
-    const [t0, x0, y0r, p0] = FINGER[i], [t1, x1, y1r, p1] = FINGER[i + 1]
-    const y0 = y0r === 0 ? choiceCY : y0r, y1 = y1r === 0 ? choiceCY : y1r
-    const u = inOut(seg(t, t0, t1))
-    const press = p0 && p1 ? 1 : lerp(p0, p1, u)
-    return { x: lerp(x0, x1, u), y: lerp(y0, y1, u), press }
+  const outBack = (u, s = 1.7) => 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2)
+  const show = (el, o, dy = 0, blur = 0, s = 1) => {
+    el.style.opacity = o
+    el.style.transform = `translateY(${dy}px) scale(${s})`
+    el.style.filter = blur ? `blur(${blur}px)` : ''
+    el.style.visibility = o <= 0.001 ? 'hidden' : 'visible'
+  }
+  // 入场：从下方浮起并去模糊；出场：向上淡出
+  const inOutAnim = (el, t, a, b, d = 0.45, dy = 40) => {
+    const i = outExpo(seg(t, a, a + d)), o = outQuart(seg(t, b - 0.3, b))
+    show(el, i * (1 - o), (1 - i) * dy - o * 24, (1 - i) * 10 + o * 6)
   }
 
-  function seek(t) {
-    // ---- 开场：Logo 描线、点聚合，字标落成小程序顶栏 ----
-    const arc = outQuart(seg(t, 0.1, 0.9))
-    $('arc').style.strokeDashoffset = 200 * (1 - arc)
-    document.querySelectorAll('.dot').forEach((d, i) => {
-      const u = spring(seg(t, 0.45 + i * 0.1, 1.1 + i * 0.1) * 1.1)
-      d.style.transformOrigin = d.getAttribute('cx') + 'px ' + d.getAttribute('cy') + 'px'
-      d.style.transform = `scale(${u})`
-    })
-    const wIn = outExpo(seg(t, 0.75, 1.3))
-    const fly = inOut(seg(t, 1.45, 2.25))
-    const [bx, by] = P(195, 50 + 22)
-    const word = $('introWord')
-    const s1 = lerp(1, 23 * S / 120, fly)
-    word.style.opacity = wIn
-    word.style.transform = `translate(0, ${lerp(0, by - 1020, fly) + (1 - wIn) * 30}px) scale(${s1})`
-    $('introMark').style.opacity = 1 - outQuart(seg(t, 1.45, 1.85))
-    $('introMark').style.transform = `translateY(${-fly * 120}px) scale(${1 - fly * 0.3})`
-    $('introCn').style.opacity = wIn * (1 - outQuart(seg(t, 1.4, 1.75)))
-    $('intro').style.visibility = t > 2.3 ? 'hidden' : 'visible'
-    $('navBrand').style.opacity = t > 2.25 ? 1 : 0
-
-    // 手机从字标周围生长出来
-    const grow = outExpo(seg(t, 1.5, 2.4))
+  const S = 2.1
+  const sent = $('sentWrap'), sw = $('sw')
+  const M = {}
+  // 全部测量在无变换状态下进行，之后每帧只读这些数值
+  function measure() {
+    const fr = $('frame').getBoundingClientRect()
+    const rel = (el) => { const b = el.getBoundingClientRect(); return { x: b.left - fr.left, y: b.top - fr.top, w: b.width, h: b.height, cx: b.left - fr.left + b.width / 2, cy: b.top - fr.top + b.height / 2 } }
+    document.querySelectorAll('.card').forEach((c) => { c.style.visibility = 'visible' })
+    M.sw = rel(sw); M.sent = rel(sent)
+    M.wA = rel($('wA')); M.wB = rel($('wB')); M.sC = rel($('sC'))
+    document.querySelectorAll('.card').forEach((c) => { c.style.visibility = '' })
     const phone = $('phone')
-    phone.style.opacity = grow
-    phone.style.transform = `translateY(${(1 - grow) * 140}px) scale(${S * lerp(0.92, 1, grow)})`
+    phone.style.visibility = 'visible'
+    phone.style.transform = `scale(${S})`
+    M.qp = rel($('qp')); M.chD = rel($('chD'))
+    M.screen = rel(document.querySelector('.screen'))
+    $('ghost').innerHTML = $('sC').innerHTML
+    $('ghost').style.width = M.sC.w + 'px'
 
-    // ---- 字幕 ----
-    caps.forEach((c, i) => {
-      const [a, b] = CAP_WINDOWS[i]
-      const inU = outExpo(seg(t, a, a + 0.5)), outU = outQuart(seg(t, b - 0.3, b))
-      const last = i === caps.length - 1
-      const o = inU * (1 - (last ? outQuart(seg(t, 12.75, 13.1)) : outU))
-      c.style.opacity = o
-      c.style.transform = `translateY(${(1 - inU) * 40 - outU * 30}px)`
-      c.style.filter = `blur(${(1 - inU) * 8 + outU * 6}px)`
+    // 主语 / 宾语下划线、标签与词性标签的位置
+    const place = (id, group, lab) => {
+      const rs = [...$(id).getClientRects()].filter((r) => r.width > 1)
+      rs.forEach((r) => {
+        const u = document.createElement('div')
+        u.className = 'uline'
+        u.dataset.group = group
+        u.style.left = r.left - fr.left + 'px'
+        u.style.top = r.bottom - fr.top - 2 + 'px'
+        u.style.width = r.width + 'px'
+        $('hook').appendChild(u)
+      })
+      const l = $(lab)
+      l.style.left = rs[0].left - fr.left + 'px'
+      l.style.top = rs[0].bottom - fr.top + 8 + 'px'
+    }
+    place('subj', 0, 'labS')
+    place('obj', 1, 'labO')
+  }
+  const toScreen = (p) => ({ x: (p.cx - M.screen.x) / S, y: (p.cy - M.screen.y) / S })
+
+  function seek(t) {
+    $('fade').style.opacity = 1 - outQuart(seg(t, 0, 0.3))
+
+    // ---------- 钩子 ----------
+    inOutAnim($('hookCap'), t, 0.2, 1.45)
+    const nIn = clamp(outBack(seg(t, 0.6, 0.95)), 0, 1.2), nOut = outQuart(seg(t, 1.15, 1.35))
+    show($('nTag'), clamp(nIn) * (1 - nOut), (1 - clamp(nIn)) * 30, 0, 0.9 + 0.1 * nIn)
+
+    // 镜头拉远：巨大的 evidence 就是句子里的那个词
+    const big = 1220 / M.sw.w
+    const dolly = inOut(seg(t, 1.2, 2.25))
+    const breathe = 1 + 0.03 * outQuart(seg(t, 0, 1.2)) * (1 - dolly)
+    const sc = lerp(big, 1, dolly) * breathe
+    const ox = M.sw.cx - M.sent.x, oy = M.sw.cy - M.sent.y
+    const tx = lerp(540 - M.sw.cx, 0, dolly), ty = lerp(930 - M.sw.cy, 0, dolly)
+    sent.style.transformOrigin = `${ox}px ${oy}px`
+    sent.style.transform = `translate(${tx}px, ${ty}px) scale(${sc})`
+    const ctx = outQuart(seg(t, 1.55, 2.25))
+    sent.querySelectorAll('.w').forEach((w) => { w.style.opacity = ctx })
+    sw.style.setProperty('--hl', outQuart(seg(t, 2.0, 2.45)))
+    const cap2 = $('cap2')
+    if (t > 4.35) cap2.innerHTML = '是动词：<span style="color:var(--accent-strong)">证实、显示</span>'
+    else cap2.textContent = '那这句里呢？'
+    const c2a = outExpo(seg(t, 1.95, 2.4)), c2swap = t > 4.35 ? outExpo(seg(t, 4.35, 4.75)) : 1, c2o = outQuart(seg(t, 5.8, 6.1))
+    show(cap2, c2a * c2swap * (1 - c2o), (1 - c2a) * 40 + (1 - c2swap) * 30, (1 - c2a) * 10 + (1 - c2swap) * 8)
+
+    // 3 秒判断
+    const tfIn = outExpo(seg(t, 2.35, 2.8)), tfOut = outQuart(seg(t, 4.75, 5.05))
+    show($('tf'), tfIn * (1 - tfOut), (1 - tfIn) * 50 - tfOut * 30, (1 - tfIn) * 8)
+    $('timerBar').style.transform = `scaleX(${1 - seg(t, 2.8, 4.3)})`
+    const c = $('count')
+    if (t >= 2.8 && t < 4.3) {
+      const k = Math.floor((t - 2.8) / 0.5), u = ((t - 2.8) % 0.5) / 0.5
+      c.textContent = String(3 - k)
+      show(c, 1 - outQuart(seg(u, 0.6, 1)), 0, 0, 1.25 - 0.25 * outExpo(u))
+    } else show(c, 0)
+    const yes = t >= 4.3
+    const pYes = $('pYes'), pNo = $('pNo')
+    pYes.style.borderColor = yes ? 'var(--positive)' : ''
+    pYes.style.color = yes ? 'var(--positive)' : ''
+    pYes.style.background = yes ? 'rgba(123,199,164,.12)' : ''
+    pYes.style.transform = `scale(${yes ? 1 + 0.06 * Math.sin(Math.PI * seg(t, 4.3, 4.6)) : 1})`
+    const ck = pYes.querySelector('svg')
+    ck.style.display = yes ? 'block' : 'none'
+    ck.style.transform = `scale(${outBack(seg(t, 4.3, 4.6))})`
+    pNo.style.opacity = yes ? 0.4 : 1
+
+    // 主语 / 宾语 / 词性
+    document.querySelectorAll('.uline').forEach((el) => { const i = Number(el.dataset.group); const u = outQuart(seg(t, 4.55 + i * 0.12, 4.95 + i * 0.12)); el.style.transform = `scaleX(${u})`; el.style.opacity = u > 0 ? 1 : 0 })
+    ;['labS', 'labO'].forEach((id, i) => { const u = outExpo(seg(t, 4.7 + i * 0.12, 5.1 + i * 0.12)); show($(id), u, (1 - u) * 14) })
+    inOutAnim($('trans'), t, 4.95, 7.0)
+    $('hook').style.visibility = t > 6.6 ? 'hidden' : 'visible'
+
+    // ---------- 快切：马克笔从当前单词扩成下一张色块 ----------
+    const wipe = (id, from, a, b) => {
+      const u = inOut(seg(t, a, b))
+      const el = $(id)
+      el.style.clipPath = `circle(${u * 2300}px at ${from.cx}px ${from.cy}px)`
+      el.style.visibility = u > 0 ? 'visible' : 'hidden'
+    }
+    wipe('cA', M.sw, 6.1, 6.55)
+    wipe('cB', M.wA, 7.25, 7.7)
+    wipe('cC', M.wB, 8.35, 8.8)
+    ;[['wA', 6.45], ['wB', 7.6], ['wC', 8.7]].forEach(([id, a]) => $(id).style.setProperty('--hl', outQuart(seg(t, a, a + 0.35))))
+    ;[['cA', 6.4], ['cB', 7.55], ['cC', 8.65]].forEach(([id, a]) => {
+      const card = $(id)
+      const u = outExpo(seg(t, a - 0.25, a + 0.25))
+      card.querySelector('.s').style.transform = `translateY(${(1 - u) * 50}px)`
+      const g = outBack(seg(t, a + 0.15, a + 0.45))
+      const tg = card.querySelector('.t')
+      tg.style.opacity = clamp(g * 2) * (id === 'cC' ? 1 - outQuart(seg(t, 9.0, 9.2)) : 1)
+      tg.style.transform = `translateY(${(1 - clamp(g)) * 24}px)`
     })
+    const mi = outExpo(seg(t, 6.35, 6.8)), mo = outQuart(seg(t, 9.0, 9.25))
+    show($('montCap'), mi * (1 - mo), (1 - mi) * -30)
 
-    // ---- 划走 deliberate ----
-    const drag = inOut(seg(t, 2.65, 3.05)), throwU = outQuart(seg(t, 3.0, 3.45))
-    $('cardSkip').style.transform = `translateY(${-drag * 150 - throwU * 760}px) rotate(${-drag * 3 - throwU * 6}deg)`
-    $('cardSkip').style.opacity = 1 - seg(t, 3.25, 3.45)
-    $('cardSkip').style.visibility = t > 3.45 ? 'hidden' : 'visible'
-    const rise = outExpo(seg(t, 3.0, 3.6))
-    const card = $('card')
+    // ---------- 最后一句收进小程序 ----------
+    const carry = inOut(seg(t, 9.0, 9.7))
+    const phone = $('phone')
+    const pin = outExpo(seg(t, 9.05, 9.7))
+    phone.style.opacity = pin
+    phone.style.visibility = pin > 0 ? 'visible' : 'hidden'
+    const push = inOut(seg(t, 11.25, 11.9))
+    phone.style.transform = `translateY(${(1 - pin) * 120 - push * 90}px) scale(${S * lerp(0.94, 1, pin)})`
+    $('sC').style.opacity = t < 9.0 ? 1 : 0
+    const g = $('ghost')
+    if (t >= 9.0 && t < 9.8) {
+      const k = M.qp.w / M.sC.w
+      g.style.visibility = 'visible'
+      g.style.left = M.sC.x + 'px'; g.style.top = M.sC.y + 'px'
+      g.style.transform = `translate(${(M.qp.x - M.sC.x) * carry}px, ${(M.qp.y + 14 * S - M.sC.y) * carry}px) scale(${lerp(1, k, carry)})`
+      g.style.opacity = 1 - outQuart(seg(t, 9.25, 9.5))
+      g.querySelector('.hl').style.setProperty('--hl', 1)
+    } else g.style.visibility = 'hidden'
+    document.querySelector('.qcard').style.opacity = outQuart(seg(t, 9.38, 9.65))
+    inOutAnim($('phoneCap'), t, 9.55, 12.15)
 
-    // ---- 翻面 ----
-    const flip = seg(t, 4.05, 4.75)
-    const flipE = flip <= 0 ? 0 : spring(flip * 1.25, 0.72, 11)
-    const lift = Math.sin(Math.PI * clamp(flip)) * 30
-    card.style.transform = `translateY(${(1 - rise) * 16}px) scale(${lerp(0.97, 1, rise)}) translateZ(${lift}px) rotateY(${flipE * 180}deg)`
-    card.style.visibility = t < 2.9 ? 'hidden' : 'visible'
-
-    // ---- 按下「开始学习」→ 题目 ----
-    const btnPress = t > 5.25 && t < 5.45 ? 1 : 0
-    $('startBtn').style.transform = `scale(${1 - btnPress * 0.04})`
-    const toQ = outExpo(seg(t, 5.4, 6.0))
-    $('def').style.opacity = 1 - toQ
-    $('def').style.transform = `translateY(${-toQ * 18}px)`
-    $('def').style.filter = `blur(${toQ * 5}px)`
-    const q = $('q')
-    q.style.opacity = toQ
-    q.style.transform = `translateY(${(1 - toQ) * 26}px)`
-    $('mark').style.setProperty('--hl', outQuart(seg(t, 6.25, 6.85)))
-
-    // ---- 作答 ----
-    const rect = $('chC').getBoundingClientRect()
-    const sRect = phone.querySelector('.screen').getBoundingClientRect()
-    const sc = sRect.width / 390
-    choiceCY = (rect.top + rect.height / 2 - sRect.top) / sc
-    const wrong = t >= 7.85, right = t >= 8.25
-    const C = $('chC'), A = $('chA')
-    C.style.borderColor = wrong ? 'var(--negative)' : ''
-    C.style.color = wrong ? 'var(--negative)' : ''
-    C.style.background = wrong ? 'rgba(224,160,149,.08)' : ''
-    C.querySelector('b').style.color = wrong ? 'inherit' : ''
-    C.querySelector('.st').style.opacity = wrong ? 1 : 0
-    C.querySelector('.st').style.transform = `scale(${wrong ? outBack(seg(t, 7.85, 8.15)) : 0.4})`
-    C.style.transform = `translateX(${wrong ? Math.sin((t - 7.85) * 40) * 6 * (1 - seg(t, 7.85, 8.25)) : 0}px)`
-    A.style.borderColor = right ? 'var(--positive)' : ''
-    A.style.color = right ? 'var(--positive)' : ''
-    A.style.background = right ? 'rgba(123,199,164,.08)' : ''
-    A.querySelector('b').style.color = right ? 'inherit' : ''
-    A.querySelector('.st').style.opacity = right ? 1 : 0
-    A.querySelector('.st').style.transform = `scale(${right ? outBack(seg(t, 8.25, 8.55)) : 0.4})`
-    const dim = outQuart(seg(t, 8.25, 8.6))
-    $('chB').style.opacity = $('chD').style.opacity = 1 - dim * 0.45
-    const col = inOut(seg(t, 8.6, 9.2))
+    // 作答：手指点 D → D 标红，B 标绿 → 辨析
+    const tD = toScreen(M.chD)
+    const path = [[9.85, 300, 820], [10.35, tD.x + 40, tD.y], [10.45, tD.x + 40, tD.y], [10.9, 320, 860]]
+    const f = $('finger'), rp = $('ripple')
+    if (t >= path[0][0] && t <= path[path.length - 1][0]) {
+      let i = 0; while (i < path.length - 2 && t > path[i + 1][0]) i++
+      const u = inOut(seg(t, path[i][0], path[i + 1][0]))
+      const x = lerp(path[i][1], path[i + 1][1], u), y = lerp(path[i][2], path[i + 1][2], u)
+      const press = t > 10.35 && t < 10.5 ? 1 : 0
+      f.style.opacity = Math.min(seg(t, 9.85, 10.05), 1 - seg(t, 10.7, 10.9))
+      f.style.transform = `translate(${x}px, ${y}px) scale(${1 - press * 0.2})`
+    } else f.style.opacity = 0
+    if (t >= 10.4 && t < 10.9) {
+      const u = (t - 10.4) / 0.5
+      rp.style.opacity = (1 - u) * 0.9
+      rp.style.transform = `translate(${tD.x + 40}px, ${tD.y}px) scale(${0.6 + outQuart(u) * 1.8})`
+    } else rp.style.opacity = 0
+    const wrong = t >= 10.42, right = t >= 10.8
+    const D = $('chD'), B = $('chB')
+    const paint = (el, on, col, bg) => {
+      el.style.borderColor = on ? col : ''; el.style.color = on ? col : ''; el.style.background = on ? bg : ''
+      el.querySelector('b').style.color = on ? 'inherit' : ''
+      el.querySelector('.st').style.opacity = on ? 1 : 0
+    }
+    paint(D, wrong, 'var(--negative)', 'rgba(224,160,149,.08)')
+    paint(B, right, 'var(--positive)', 'rgba(123,199,164,.08)')
+    D.querySelector('.st').style.transform = `scale(${wrong ? outBack(seg(t, 10.42, 10.7)) : 0.4})`
+    B.querySelector('.st').style.transform = `scale(${right ? outBack(seg(t, 10.8, 11.1)) : 0.4})`
+    D.style.transform = `translateX(${wrong ? Math.sin((t - 10.42) * 40) * 5 * (1 - seg(t, 10.42, 10.8)) : 0}px)`
+    document.querySelectorAll('.choice').forEach((ch) => { if (ch !== B && ch !== D) ch.style.opacity = 1 - 0.45 * outQuart(seg(t, 10.8, 11.1)) })
+    const col = inOut(seg(t, 11.0, 11.5))
     const qw = $('qwrap'); qw.style.height = ''; const natural = qw.scrollHeight
-    qw.style.height = t < 8.6 ? '' : `${lerp(natural, 0, col)}px`
-    $('qwrap').style.opacity = 1 - col
-    const cmp = outExpo(seg(t, 9.0, 9.6))
+    qw.style.height = t < 11.0 ? '' : `${lerp(natural, 0, col)}px`
+    qw.style.opacity = 1 - col
+    const cmp = outExpo(seg(t, 11.3, 11.85))
     $('compare').style.opacity = cmp
     $('compare').style.transform = `translateY(${(1 - cmp) * 24}px)`
 
-    // ---- 学完 ----
-    const done = outQuart(seg(t, 11.05, 11.4))
-    $('done').style.opacity = done
-    const st = seg(t, 11.2, 11.75)
-    $('stamp').style.opacity = clamp(st * 4)
-    $('stamp').style.transform = `scale(${lerp(1.9, 1, spring(st, 0.5, 13))}) rotate(${lerp(-18, -8, outQuart(st))}deg)`
-    const num = $('num')
-    const bump = seg(t, 11.7, 12.1)
-    num.textContent = t >= 11.7 ? '128' : '127'
-    num.style.transform = `translateY(${t >= 11.7 ? (1 - outBack(bump)) * 10 : 0}px)`
-    num.style.opacity = t >= 11.7 ? clamp(bump * 3) : 1
-
-    // ---- 镜头 ----
-    const pushQ = inOut(seg(t, 5.5, 6.3)) - inOut(seg(t, 10.6, 11.2))
-    const pushC = inOut(seg(t, 9.1, 9.9)) - inOut(seg(t, 10.4, 11.0))
-    const settle = (t > 7.85 && t < 8.3) ? Math.sin((t - 7.85) * 50) * 3 * (1 - seg(t, 7.85, 8.3)) : 0
-    const drift = Math.sin(t * 0.9) * 4
-    const camS = 1 + pushQ * 0.06 + pushC * 0.08
-    const camY = -pushQ * 10 - pushC * 40 + drift
-    $('cam').style.transform = `translate(${settle}px, ${camY}px) scale(${camS})`
-
-    // ---- 手指 ----
-    const f = finger(t)
-    const fe = $('finger'), rp = $('ripple')
-    if (f) {
-      const [fx, fy] = P(f.x, f.y)
-      const vis = clamp(Math.min(seg(t, FINGER[0][0], FINGER[0][0] + 0.25), 1 - seg(t, 8.4, 8.7)))
-      fe.style.opacity = vis
-      fe.style.transform = `translate(${fx}px, ${fy}px) scale(${1 - f.press * 0.18})`
-    } else fe.style.opacity = 0
-    const taps = [2.65, 4.05, 5.25, 7.85]
-    const last = taps.filter((x) => t >= x).pop()
-    if (last !== undefined && t - last < 0.5) {
-      const u = (t - last) / 0.5
-      const fk = finger(last)
-      const [rx, ry] = P(fk.x, fk.y)
-      rp.style.opacity = (1 - u) * 0.9
-      rp.style.transform = `translate(${rx}px, ${ry}px) scale(${0.6 + outQuart(u) * 1.6})`
-    } else rp.style.opacity = 0
-
-    // ---- 收尾：紫灰从印章处铺满全屏 ----
-    const fl = inOut(seg(t, 12.8, 13.55))
-    const stampR = $('stamp').getBoundingClientRect()
-    const fx = stampR.left + stampR.width / 2, fy = stampR.top + stampR.height / 2
+    // ---------- 收尾：紫灰从正确选项铺满 ----------
+    const fl = inOut(seg(t, 12.15, 12.85))
+    const bRect = B.getBoundingClientRect(), fr = $('frame').getBoundingClientRect()
     const flood = $('flood')
-    flood.style.left = fx - 5 + 'px'
-    flood.style.top = fy - 5 + 'px'
+    flood.style.left = bRect.left - fr.left + bRect.width / 2 - 5 + 'px'
+    flood.style.top = bRect.top - fr.top + bRect.height / 2 - 5 + 'px'
     flood.style.transform = `scale(${fl * 460})`
     const end = $('end')
-    const eu = outExpo(seg(t, 13.15, 13.8))
-    end.style.opacity = eu
-    end.style.transform = `translateY(${(1 - eu) * 40}px)`
+    end.style.visibility = t > 12.5 ? 'visible' : 'hidden'
     ;[...end.children].forEach((el, i) => {
-      const u = outExpo(seg(t, 13.15 + i * 0.08, 13.8 + i * 0.08))
+      const u = outExpo(seg(t, 12.55 + i * 0.08, 13.2 + i * 0.08))
       el.style.opacity = u
       el.style.transform = `translateY(${(1 - u) * 36}px)`
     })
   }
 
-  window.__seek = seek
   window.__duration = 15
-  window.__ready = document.fonts.ready.then(() => new Promise((r) => {
-    const img = $('stamp'); if (img.complete) r(); else img.onload = r
-  }))
-  seek(0)
+  window.__seek = seek
+  window.__ready = document.fonts.ready.then(() => { measure(); seek(0) })
   if (location.search.includes('play')) {
-    const t0 = performance.now()
-    const tick = () => { const t = ((performance.now() - t0) / 1000) % 15; seek(t); requestAnimationFrame(tick) }
-    requestAnimationFrame(tick)
+    window.__ready.then(() => {
+      const t0 = performance.now()
+      const tick = () => { seek(((performance.now() - t0) / 1000) % 15); requestAnimationFrame(tick) }
+      requestAnimationFrame(tick)
+    })
   }
 })()
 </script>

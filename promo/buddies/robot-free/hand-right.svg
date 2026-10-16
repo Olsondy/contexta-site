@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="1254" height="1254">
+  <title>robot-free · hand-right</title>
+  <g id="hand-right">
+    <radialGradient id="hand-right-shadow">
+      <stop offset="0.750" stop-color="#000000" stop-opacity="0.102" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+    <ellipse cx="1128.3" cy="1004.0" rx="88.2" ry="103.2" transform="rotate(42.35 1128.3 1004.0)" fill="url(#hand-right-shadow)" />
+    <ellipse cx="1135.3" cy="995.0" rx="73.5" ry="86.0" transform="rotate(42.35 1135.3 995.0)" fill="#75cedb" />
+  </g>
+</svg>

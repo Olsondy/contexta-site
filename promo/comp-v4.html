@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Contexta 30s · 竖屏宣传短片 v4（学习伙伴）</title>
+<!--
+  30 秒 1080×1920 竖屏短片 v4。每一帧都是时间 t 的纯函数：window.__seek(t)。
+  主角是小程序里的免费学习伙伴「读书机器人」，其他伙伴客串；角色均为 contexta-server 素材包里的分层 SVG。
+  故事：猛背 evidence 37 遍 → 论文里它是动词，当场懵掉 → 大家都这样 → 「不是没背，是没在语境里见过它」→
+  小程序做一道语境题（约 3.5 秒，全片唯一的产品画面）→ 再遇见：论文、实验记录、数据里都认得 → 伙伴们 → 落版。
+  英文句子与词义取自 contexta-server 本地库中已审核的 evidence / analyze 内容；场景画面为宣传绘制的示意。
+  预览：浏览器打开本文件并加 ?play。
+-->
+<style>
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-500-normal.woff2"); font-weight: 500; }
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-700-normal.woff2"); font-weight: 700; }
+@font-face { font-family: "Satoshi"; src: url("../assets/fonts/satoshi-latin-900-normal.woff2"); font-weight: 900; }
+@font-face { font-family: "Tsanger YuYang"; src: url("fonts/tsanger-yuyang-400.subset.woff2"); font-weight: 400; }
+@font-face { font-family: "Tsanger YuYang"; src: url("fonts/tsanger-yuyang-700.subset.woff2"); font-weight: 700; }
+@font-face { font-family: "Libre Baskerville"; src: url("fonts/librebaskerville-LibreBaskerville.ttf"); font-weight: 400 700; }
+@font-face { font-family: "Libre Baskerville"; src: url("fonts/librebaskerville-LibreBaskerville-Italic.ttf"); font-weight: 400 700; font-style: italic; }
+@font-face { font-family: "Caveat"; src: url("fonts/caveat-Caveat.ttf"); font-weight: 400 700; }
+
+:root {
+  --ink: #1f2a33; --ivory: #fcf9e8; --canvas: #252825; --night: #1c1f1c;
+  --sun: #f2b544; --red: #e5484d; --green: #7bc7a4; --violet: #9a90ba;
+  --cn: "Tsanger YuYang", "PingFang SC", sans-serif;
+  --en: "Satoshi", "Helvetica Neue", sans-serif;
+  --serif: "Libre Baskerville", Georgia, serif;
+  --hand: "Caveat", "Tsanger YuYang", cursive;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+body { font-family: var(--cn); color: var(--ink); -webkit-font-smoothing: antialiased; }
+#frame { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+#shake { position: absolute; inset: 0; }
+.scene { position: absolute; inset: 0; overflow: hidden; display: none; }
+.abs { position: absolute; }
+
+/* 学习伙伴：分层 SVG，眼睛与手绕各自的转轴变换 */
+.buddy { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; }
+.buddy img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.buddy .add { position: absolute; }
+
+/* 贴纸字幕 */
+.sticker { position: absolute; left: 0; width: 1080px; text-align: center; font: 700 92px/1.18 var(--cn); color: #fff; letter-spacing: .01em; visibility: hidden; white-space: nowrap; }
+.sticker em { font-style: normal; }
+.sticker .en { font-family: var(--en); font-weight: 900; }
+
+/* 1. 猛背 */
+#s-cram { background: radial-gradient(90% 55% at 50% 30%, #f6dcaf 0%, #ecc78f 60%, #e2b679 100%); }
+.fcard { position: absolute; left: 160px; top: 430px; width: 760px; height: 470px; border-radius: 44px; background: #fffdf6; box-shadow: 0 28px 0 -6px rgba(31,42,51,.12), 0 40px 80px -30px rgba(80,50,10,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+.fcard .w { font: 900 138px/1 var(--en); letter-spacing: -.02em; color: var(--ink); }
+.fcard .m { font: 700 64px/1 var(--cn); color: #6b5a3c; }
+.fcard .m i { font: 900 58px/1 var(--en); font-style: normal; margin-right: 18px; color: #a0896a; }
+.fcard .sweep { position: absolute; inset: 0; border-radius: 44px; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.9) 50%, transparent 70%); opacity: 0; }
+.badge { position: absolute; right: -46px; top: -58px; min-width: 190px; height: 132px; padding: 0 30px; border-radius: 70px; background: var(--red); color: #fff; font: 900 82px/132px var(--en); text-align: center; box-shadow: 0 10px 0 #b8323a; transform-origin: 50% 50%; }
+.spark { position: absolute; width: 90px; height: 90px; }
+.spark path { fill: #fff; }
+
+/* 2. 论文 */
+#s-paper { background: #f4efe2; }
+#paper-cam { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; }
+#paper-cam .rule { position: absolute; left: 0; right: 0; height: 2px; background: rgba(43,42,38,.07); }
+.pp-kick { position: absolute; left: 100px; top: 540px; font: 700 26px/1 var(--en); letter-spacing: .28em; color: #a8452b; }
+.pp-title { position: absolute; left: 100px; top: 590px; width: 880px; font: italic 400 60px/1.2 var(--serif); color: #2b2a26; }
+.pp-body { position: absolute; left: 100px; top: 800px; width: 880px; font: 400 50px/1.62 var(--serif); color: #2b2a26; }
+.pp-body .gray { color: rgba(43,42,38,.32); }
+.tw { position: relative; display: inline-block; }
+.mk { position: absolute; left: -8px; right: -8px; top: 10%; bottom: 4%; border-radius: 8px; background: #ffd84a; transform-origin: 0 50%; z-index: -1; }
+.hand-note { position: absolute; font: 700 76px/1 var(--hand); color: #c4322b; white-space: nowrap; }
+#pp-note { padding: 10px 22px 14px; border-radius: 14px; background: #fff8dc; box-shadow: 0 10px 24px -12px rgba(43,42,38,.45); font-size: 64px; }
+#pp-under { position: absolute; overflow: visible; }
+#pp-under path { fill: none; stroke: #c4322b; stroke-width: 7; stroke-linecap: round; }
+#pp-dim { position: absolute; inset: 0; background: rgba(28,31,28,.55); }
+.qmark { position: absolute; font: 900 150px/1 var(--en); color: #fff; }
+
+/* 3. 加载 */
+#s-load { background: var(--night); }
+.ld-label { position: absolute; left: 0; width: 1080px; top: 640px; text-align: center; font: 700 70px/1 var(--cn); color: var(--ivory); }
+.ld-bar { position: absolute; left: 190px; top: 780px; width: 700px; height: 64px; border-radius: 40px; border: 6px solid var(--ivory); padding: 8px; }
+.ld-fill { height: 100%; border-radius: 30px; background: var(--sun); width: 0; }
+.ld-pct { position: absolute; left: 0; width: 1080px; top: 900px; text-align: center; font: 900 120px/1 var(--en); color: var(--sun); }
+
+/* 4. 你也这样 */
+.panel { position: absolute; inset: 0; visibility: hidden; overflow: hidden; }
+
+/* 5. 大字 */
+#s-type { background: var(--canvas); }
+.big { position: absolute; left: 0; width: 1080px; text-align: center; font: 700 120px/1 var(--cn); color: var(--ivory); }
+.big.hot { font-size: 210px; color: var(--sun); }
+
+/* 6. 小程序 */
+#s-app { background: radial-gradient(80% 50% at 50% 55%, #323632 0%, #252825 60%, #1c1f1c 100%); }
+.app-name { position: absolute; left: 0; width: 1080px; top: 170px; text-align: center; font: 700 104px/1 var(--cn); color: var(--ivory); }
+.app-sub { position: absolute; left: 0; width: 1080px; top: 310px; text-align: center; font: 400 50px/1 var(--cn); color: #c7cbc4; }
+.phone { position: absolute; left: 190px; top: 480px; width: 700px; height: 1300px; border-radius: 96px; background: #111311; padding: 22px; box-shadow: 0 60px 120px -40px rgba(0,0,0,.9); }
+.phone .scr { position: relative; width: 100%; height: 100%; border-radius: 76px; background: #252825; overflow: hidden; padding: 120px 44px 40px; color: #f3f4ef; }
+.phone .meta { display: flex; justify-content: space-between; font: 700 30px/1 var(--cn); color: #b8b0d4; }
+.phone .meta span:last-child { color: #a5aca3; font-weight: 400; }
+.phone .snip { margin-top: 44px; font: 500 42px/1.5 var(--en); color: #c7cbc4; }
+.phone .snip b { color: #fff; font-weight: 900; background: linear-gradient(180deg, transparent 68%, rgba(154,144,186,.6) 68%); }
+.phone .ask { margin-top: 40px; font: 700 44px/1.4 var(--cn); }
+.phone .ask i { font: 900 44px/1 var(--en); font-style: normal; color: #b8b0d4; }
+.phone .opts { position: absolute; left: 44px; right: 44px; top: 660px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.phone .opt { position: relative; height: 118px; border-radius: 28px; border: 3px solid #687068; display: flex; align-items: center; justify-content: center; gap: 12px; font: 700 48px/1 var(--cn); background: #2e312e; }
+.phone .opt svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.phone .ripple { position: absolute; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.35); left: 50%; top: 50%; margin: -65px 0 0 -65px; opacity: 0; }
+.phone .prog { position: absolute; left: 44px; right: 44px; bottom: 56px; display: flex; align-items: center; gap: 18px; font: 400 30px/1 var(--cn); color: #a5aca3; }
+.phone .dots { display: flex; gap: 14px; }
+.phone .dot { width: 22px; height: 22px; border-radius: 50%; background: #4b504b; }
+.phone .dot.on { background: #b8b0d4; }
+.phone .fb { position: absolute; left: 24px; right: 24px; bottom: 130px; padding: 34px 36px; border-radius: 40px; background: #2f3a33; border: 3px solid rgba(123,199,164,.45); }
+.phone .fb .v { display: flex; align-items: center; gap: 16px; font: 700 52px/1 var(--cn); color: var(--green); }
+.phone .fb .v svg { width: 56px; height: 56px; fill: none; stroke: currentColor; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+.phone .fb p { margin-top: 22px; font: 400 36px/1.5 var(--cn); color: #dfe3dc; }
+.phone .fb p i { font: 900 36px/1 var(--en); font-style: normal; color: #fff; }
+
+/* 7. 实验记录 */
+#s-lab { background-color: #eef0e4; background-image: linear-gradient(#d9dccb 2px, transparent 2px), linear-gradient(90deg, #d9dccb 2px, transparent 2px); background-size: 54px 54px; }
+.strip { position: absolute; left: 70px; top: 600px; width: 940px; padding: 54px 56px; background: #fffef8; box-shadow: 0 18px 40px -20px rgba(0,0,0,.35); font: 500 52px/1.5 var(--en); color: #26302a; transform: rotate(-2deg); }
+.tape { position: absolute; width: 190px; height: 64px; background: rgba(242,181,68,.55); }
+
+/* 8. 数据 */
+#s-data { background: radial-gradient(90% 60% at 50% 30%, #4a4366 0%, #3b3552 60%, #2c2840 100%); }
+#plot { position: absolute; left: 110px; top: 330px; width: 860px; height: 460px; overflow: visible; }
+.dt-sent { position: absolute; left: 100px; top: 870px; width: 880px; font: 400 52px/1.6 var(--serif); color: #f1eef8; }
+.dt-sent .gray { color: rgba(241,238,248,.4); }
+.lens { position: absolute; left: 0; top: 0; width: 330px; height: 330px; overflow: visible; }
+
+/* 9. 伙伴 */
+#s-crew { background: var(--ivory); }
+.tile { position: absolute; width: 300px; height: 300px; border-radius: 48px; overflow: hidden; }
+
+/* 10. 赢 */
+#s-win { background: radial-gradient(90% 55% at 50% 30%, #f6dcaf 0%, #ecc78f 60%, #e2b679 100%); }
+.fcard2 { position: absolute; left: 160px; top: 520px; width: 760px; height: 560px; border-radius: 44px; background: #fffdf6; box-shadow: 0 28px 0 -6px rgba(31,42,51,.12), 0 40px 80px -30px rgba(80,50,10,.45); padding: 70px 70px; }
+.fcard2 .w { font: 900 120px/1 var(--en); letter-spacing: -.02em; color: var(--ink); }
+.fcard2 .row { margin-top: 44px; display: flex; align-items: center; gap: 22px; font: 700 58px/1 var(--cn); color: #4b3f2b; }
+.fcard2 .row i { font: 900 54px/1 var(--en); font-style: normal; color: #a0896a; width: 70px; }
+.fcard2 .row svg { width: 64px; height: 64px; fill: none; stroke: #3a9b6d; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.x37 { position: absolute; right: -40px; top: -60px; height: 132px; padding: 0 30px; border-radius: 70px; background: #9b9384; color: #fff; font: 900 82px/132px var(--en); }
+.x37 .strike { position: absolute; left: 14px; right: 14px; top: 60px; height: 12px; border-radius: 6px; background: var(--red); transform-origin: 0 50%; }
+#confetti { position: absolute; inset: 0; overflow: visible; }
+
+/* 11. 落版 */
+#s-end { background: var(--ivory); }
+.end-name { position: absolute; left: 0; width: 1080px; top: 560px; text-align: center; font: 700 200px/1 var(--cn); color: var(--ink); letter-spacing: .04em; }
+.end-en { position: absolute; left: 0; width: 1080px; top: 810px; text-align: center; font: 900 66px/1 var(--en); color: var(--ink); letter-spacing: .02em; }
+.end-line { position: absolute; left: 0; width: 1080px; top: 920px; text-align: center; font: 400 50px/1 var(--cn); color: #59605a; }
+.end-pill { position: absolute; left: 50%; top: 1060px; transform: translateX(-50%); height: 120px; padding: 0 56px; border-radius: 60px; background: var(--ink); color: var(--ivory); font: 700 54px/120px var(--cn); white-space: nowrap; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="frame">
+<div id="shake">
+  <section class="scene" id="s-cram">
+    <div class="fcard" id="fcard"><p class="w">evidence</p><p class="m"><i>n.</i>证据</p><div class="sweep"></div><div class="badge" id="badge">×1</div></div>
+  </section>
+
+  <section class="scene" id="s-paper">
+    <div id="paper-cam">
+      <p class="pp-kick">PHONOLOGY · FIELD REPORT</p>
+      <h2 class="pp-title">Three generations, one shifting sound</h2>
+      <p class="pp-body" id="pp-body"></p>
+      <svg id="pp-under"><path id="pp-under-path"/></svg>
+      <p class="hand-note" id="pp-note">v. 证实；表明</p>
+    </div>
+    <div id="pp-dim"></div>
+  </section>
+
+  <section class="scene" id="s-load">
+    <p class="ld-label">大脑加载中…</p>
+    <div class="ld-bar"><div class="ld-fill" id="ld-fill"></div></div>
+    <p class="ld-pct" id="ld-pct">0%</p>
+  </section>
+
+  <section class="scene" id="s-metoo"></section>
+
+  <section class="scene" id="s-type">
+    <p class="big" id="ty1" style="top:560px">不是没背，</p>
+    <p class="big" id="ty2" style="top:790px">是没在</p>
+    <p class="big hot" id="ty3" style="top:960px">语境里</p>
+    <p class="big" id="ty4" style="top:1240px">见过它。</p>
+  </section>
+
+  <section class="scene" id="s-app">
+    <p class="app-name" id="app-name">语境自修</p>
+    <p class="app-sub" id="app-sub">把单词放回真实句子里练</p>
+    <div class="phone" id="phone"><div class="scr" id="scr">
+      <p class="meta"><span>学术阅读词汇</span><span>判断题</span></p>
+      <p class="snip">…audio archives from elderly community members <b>evidence</b> notable phonological shifts…</p>
+      <p class="ask">这里的 <i>evidence</i> 作动词，意为“证实”？</p>
+      <div class="opts"><div class="opt" id="opt-yes"><svg viewBox="0 0 24 24" id="opt-check" style="display:none"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>对<i class="ripple" id="ripple"></i></div><div class="opt" id="opt-no">错</div></div>
+      <div class="fb" id="fb"><p class="v"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>答对了</p><p><i>evidence</i> 在这里作动词：证实；表明。</p></div>
+      <div class="prog"><span class="dots"><i class="dot on"></i><i class="dot on"></i><i class="dot on"></i><i class="dot" id="dot4"></i></span><span id="pn">题组 3 / 4</span></div>
+    </div></div>
+  </section>
+
+  <section class="scene" id="s-lab">
+    <div class="strip" id="strip">Before publishing their project findings, the team will <span class="tw" id="lab-w"><i class="mk" id="lab-mk" style="background:#c9e36a"></i>analyze</span> the water samples to detect chemical traces.
+      <i class="tape" style="left:-40px;top:-30px;transform:rotate(-14deg)"></i><i class="tape" style="right:-40px;bottom:-26px;transform:rotate(-10deg)"></i></div>
+    <p class="hand-note" id="lab-note" style="color:#2f6b3d">仔细分析！</p>
+  </section>
+
+  <section class="scene" id="s-data">
+    <svg id="plot" viewBox="0 0 860 520"></svg>
+    <p class="dt-sent" id="dt-sent"><span class="gray">…yet the preliminary data provided little empirical</span> <span class="tw" id="dt-w">evidence</span> <span class="gray">to support the original hypothesis.</span></p>
+    <svg class="lens" id="mag" viewBox="0 0 330 330"><circle cx="140" cy="140" r="112" fill="rgba(255,255,255,.12)" stroke="#fcf9e8" stroke-width="18"/><path d="M222 222 L312 312" stroke="#fcf9e8" stroke-width="34" stroke-linecap="round"/></svg>
+  </section>
+
+  <section class="scene" id="s-crew"></section>
+
+  <section class="scene" id="s-win">
+    <div class="fcard2" id="fcard2">
+      <p class="w">evidence</p>
+      <p class="row" id="row1"><i>n.</i>证据<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></p>
+      <p class="row" id="row2"><i>v.</i>证实；表明<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></p>
+      <div class="x37" id="x37">×37<i class="strike" id="x37s"></i></div>
+    </div>
+    <svg id="confetti" viewBox="0 0 1080 1920"></svg>
+  </section>
+
+  <section class="scene" id="s-end">
+    <p class="end-name" id="end-name">语境自修</p>
+    <p class="end-en" id="end-en">Contexta</p>
+    <p class="end-line" id="end-line">把单词放回语境里练</p>
+    <p class="end-pill" id="end-pill">微信搜索「语境自修」</p>
+  </section>
+
+  <div id="caps"></div>
+</div>
+<div id="flash"></div>
+</div>
+
+<script src="buddies/buddies.js"></script>
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s)
+  const NS = 'http://www.w3.org/2000/svg'
+  const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e }
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
+  const lerp = (a, b, u) => a + (b - a) * u
+  const seg = (t, a, b) => clamp((t - a) / (b - a))
+  const outExpo = (u) => (u >= 1 ? 1 : 1 - Math.pow(2, -10 * u))
+  const outCubic = (u) => 1 - Math.pow(1 - u, 3)
+  const inOut = (u) => (u < 0.5 ? 4 * u ** 3 : 1 - Math.pow(-2 * u + 2, 3) / 2)
+  const outBack = (u, s = 1.7) => 1 + (s + 1) * Math.pow(u - 1, 3) + s * Math.pow(u - 1, 2)
+  const spring = (u, z = 0.4, w = 18) => (u <= 0 ? 0 : 1 - Math.exp(-z * w * u) * Math.cos(w * Math.sqrt(1 - z * z) * u))
+  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let x = Math.imul(seed ^ (seed >>> 15), 1 | seed); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296 }
+  const vis = (el, on) => { el.style.visibility = on ? 'visible' : 'hidden' }
+  const show = (el, on) => { el.style.display = on ? 'block' : 'none' }
+  const BEAT = 0.5
+
+  // 场景时间表（与 audio-v4.py 一致）
+  const SC = {
+    cram: [0, 3.5], paper1: [3.5, 7.5], load: [7.5, 9.0], metoo: [9.0, 11.0], type: [11.0, 13.0],
+    app: [13.0, 16.5], paper2: [16.5, 18.5], lab: [18.5, 20.25], data: [20.25, 22.25], crew: [22.25, 24.75], win: [24.75, 27.0], end: [27.0, 30.0],
+  }
+  const inSc = (t, k) => t >= SC[k][0] && t < SC[k][1]
+
+  // ================= 学习伙伴 =================
+  const C = 1254
+  function makeBuddy(key, size, parent) {
+    const def = window.BUDDIES[key]
+    const el = document.createElement('div')
+    el.className = 'buddy'
+    el.style.width = el.style.height = size + 'px'
+    const eyes = [], hands = []
+    def.layers.forEach((l) => {
+      const img = document.createElement('img')
+      img.src = l.file
+      img.style.transformOrigin = `${(l.px / C) * 100}% ${(l.py / C) * 100}%`
+      el.appendChild(img)
+      if (l.role === 'eye') eyes.push(img)
+      if (l.role === 'hand') hands.push({ img, side: l.side })
+    })
+    parent.appendChild(el)
+    const k = size / C
+    const b = { el, def, size, eyes, hands, corner: def.corner }
+    // 角落探头：u=0 在画外，u=1 完全探出；s 为整体缩放，bounce 为底部压缩回弹
+    b.set = ({ u = 1, W = 1080, H = 1920, dx = 0, dy = 0, s = 1, r = 0, sq = 0, blink = 1, eyeS = 1, ex = 0, ey = 0, hand = 0, handY = 0, op = 1, corner = b.corner } = {}) => {
+      const left = corner.endsWith('left') ? 0 : W - size
+      const top = corner.startsWith('top') ? 0 : H - size
+      const sx = corner.endsWith('left') ? -1 : 1
+      const off = (1 - u) * size * 0.55
+      el.style.transform = `translate(${left + sx * off + dx}px, ${top + off + dy}px) rotate(${r}deg) scale(${s * (1 + sq * 0.6)}, ${s * (1 - sq)})`
+      el.style.opacity = op
+      eyes.forEach((e) => { e.style.transform = `translate(${ex * k}px, ${ey * k}px) scale(${eyeS}, ${eyeS * blink})` })
+      hands.forEach(({ img, side }) => { img.style.transform = `translateY(${handY * k}px) rotate(${(side === 'left' ? -1 : 1) * hand}deg)` })
+    }
+    // 在画布坐标 (cx, cy) 处挂一个附加元素（汗滴、问号等）
+    b.add = (node, cx, cy, w) => { node.classList.add('add'); node.style.left = (cx * k - w / 2) + 'px'; node.style.top = (cy * k - w / 2) + 'px'; node.style.width = w + 'px'; el.appendChild(node); return node }
+    return b
+  }
+  // 眨眼：在 at 时刻眨一次
+  const blinkAt = (t, ...ats) => { let v = 1; ats.forEach((a) => { const d = Math.abs(t - a); if (d < 0.09) v = Math.min(v, 0.1 + 0.9 * (d / 0.09)) }); return v }
+
+  // ================= 贴纸字幕 =================
+  const outline = (w, c) => Array.from({ length: 28 }, (_, i) => { const a = (i / 28) * Math.PI * 2; return `${(Math.cos(a) * w).toFixed(1)}px ${(Math.sin(a) * w).toFixed(1)}px 0 ${c}` }).join(',') + `, 0 ${w + 8}px 0 ${c}`
+  const capsEl = $('#caps')
+  function sticker(html, { y, size = 92, color = '#fff', stroke = '#1f2a33', w = 12, rot = -2, t0, t1 }) {
+    const el = document.createElement('p')
+    el.className = 'sticker'
+    el.innerHTML = html
+    el.style.top = y + 'px'
+    el.style.fontSize = size + 'px'
+    el.style.color = color
+    el.style.textShadow = outline(w, stroke)
+    capsEl.appendChild(el)
+    return { el, t0, t1, rot }
+  }
+  function drawSticker(s, t) {
+    const on = t >= s.t0 && t < s.t1
+    vis(s.el, on)
+    if (!on) return
+    const u = seg(t, s.t0, s.t0 + 0.32)
+    const sc = 0.35 + 0.65 * outBack(u, 2.6)
+    const wob = Math.sin((t - s.t0) * 5) * 0.8
+    s.el.style.transform = `rotate(${s.rot + wob * (1 - u * 0.5)}deg) scale(${sc})`
+    s.el.style.opacity = seg(t, s.t0, s.t0 + 0.06)
+  }
+  const CAPS = [
+    sticker('考前猛背中', { y: 170, t0: 0.15, t1: 2.5, rot: -3 }),
+    sticker('稳了。', { y: 150, size: 150, t0: 2.5, t1: 3.5, rot: -4, color: '#fff7d6' }),
+    sticker('然后，在论文里遇见它——', { y: 150, size: 76, t0: 3.6, t1: 5.5, rot: -2 }),
+    sticker('录音档案<em style="color:#ff6b6b">证据</em>了……<br>语音演变？？', { y: 130, size: 96, t0: 5.55, t1: 7.5, rot: 2 }),
+    sticker('背的时候：认识', { y: 520, size: 104, t0: 9.0, t1: 9.66, rot: -3 }),
+    sticker('读的时候：你谁？', { y: 520, size: 104, t0: 9.66, t1: 10.33, rot: 3 }),
+    sticker('我也是 <span class="en">+1</span>', { y: 520, size: 120, t0: 10.33, t1: 11.0, rot: -2 }),
+    sticker('再遇见它：<em style="color:#ffd84a">秒懂</em>。', { y: 150, size: 104, t0: 16.6, t1: 18.5, rot: -2 }),
+    sticker('实验记录：也看得懂。', { y: 190, size: 92, t0: 18.6, t1: 20.25, rot: 2 }),
+    sticker('它当名词？', { y: 170, size: 104, t0: 20.35, t1: 21.15, rot: -2 }),
+    sticker('证据？这我熟。', { y: 170, size: 104, t0: 21.15, t1: 22.25, rot: 2, color: '#ffe28a' }),
+    sticker('还有学习伙伴陪你练', { y: 250, size: 92, t0: 22.35, t1: 24.75, rot: -2, color: '#ffffff' }),
+    sticker('背过的词，<br>换个句子也认得。', { y: 150, size: 100, t0: 24.85, t1: 27.0, rot: -2 }),
+  ]
+
+  // ================= 1. 猛背 =================
+  const sCram = $('#s-cram'), fcard = $('#fcard'), badge = $('#badge'), sweep = $('.sweep', fcard)
+  const robotCram = makeBuddy('robot-free', 1200, sCram)
+  const sparks = [[150, 330, 1], [930, 300, 0.8], [880, 960, 0.7], [210, 980, 0.9]].map(([x, y, s]) => {
+    const sv = svgEl('svg', { class: 'spark', viewBox: '0 0 40 40' }, sCram)
+    svgEl('path', { d: 'M20 0 C22 14 26 18 40 20 C26 22 22 26 20 40 C18 26 14 22 0 20 C14 18 18 14 20 0Z' }, sv)
+    sv.style.left = (x - 45) + 'px'; sv.style.top = (y - 45) + 'px'
+    return { sv, s }
+  })
+  // 第 n 遍：0.45 秒起越背越快，2.35 秒到第 37 遍
+  const countAt = (t) => 1 + Math.floor(36 * Math.pow(seg(t, 0.45, 2.35), 1.8))
+
+  function drawCram(t) {
+    const on = inSc(t, 'cram')
+    show(sCram, on)
+    if (!on) return
+    const n = countAt(t)
+    badge.textContent = '×' + n
+    // 每背一遍：卡片轻跳、高光扫过
+    const tick = (n - 1) % 2
+    const since = (() => { let a = t; while (a > 0.45 && countAt(a - 0.01) === n) a -= 0.01; return t - a })()
+    const pulse = n > 1 && t < 2.5 ? Math.exp(-since * 18) : 0
+    const enter = outBack(seg(t, 0.05, 0.4), 1.6)
+    const smug = seg(t, 2.5, 2.7)
+    const cardS = (0.6 + 0.4 * enter) * (1 + pulse * 0.05) * (1 + 0.06 * outBack(smug, 3))
+    fcard.style.transform = `translateY(${(1 - enter) * 160}px) rotate(${-3 + (tick ? 1.2 : -1.2) * pulse}deg) scale(${cardS})`
+    fcard.style.opacity = seg(t, 0.05, 0.15)
+    sweep.style.opacity = pulse
+    sweep.style.transform = `translateX(${(1 - pulse) * 400 - 200}px)`
+    const bp = n === 37 ? outBack(seg(t, 2.32, 2.6), 3) : 0
+    badge.style.transform = `scale(${1 + pulse * 0.12 + bp * 0.35}) rotate(${bp * 8}deg)`
+    // 机器人：边翻书边点头；第 37 遍后眯眼得意
+    const bob = Math.sin(t * Math.PI * 4) * 0.5 + 0.5
+    robotCram.set({
+      u: outBack(seg(t, 0, 0.45), 1.4), dx: 60, dy: 0,
+      sq: t < 2.5 ? bob * 0.025 : -0.03 * Math.exp(-(t - 2.5) * 6),
+      hand: t < 2.4 ? (bob - 0.5) * 10 : 0, handY: t < 2.4 ? -bob * 30 : -20,
+      blink: t < 2.5 ? blinkAt(t, 1.3) : lerp(1, 0.28, outCubic(smug)),
+      ex: t < 2.5 ? -20 : 0, ey: t < 2.5 ? -40 : -10,
+    })
+    sparks.forEach(({ sv, s }, i) => {
+      const u = seg(t, 2.52 + i * 0.06, 2.9 + i * 0.06)
+      const sc = s * Math.sin(u * Math.PI)
+      sv.style.transform = `scale(${sc * 1.4}) rotate(${u * 90}deg)`
+      sv.style.opacity = u > 0 && u < 1 ? 1 : 0
+    })
+  }
+
+  // ================= 2. 论文（3.5–7.5 懵；16.5–18.5 秒懂）=================
+  const sPaper = $('#s-paper'), cam = $('#paper-cam'), ppBody = $('#pp-body'), ppNote = $('#pp-note')
+  for (let i = 0; i < 26; i++) { const r = document.createElement('i'); r.className = 'rule'; r.style.top = (180 + i * 66) + 'px'; cam.prepend(r) }
+  const P1 = 'The field linguist noted that audio archives from elderly community members'
+  const P2 = 'notable phonological shifts across three successive generations.'
+  ppBody.innerHTML = `<span class="gray">${P1}</span> <span class="tw" id="pp-w"><i class="mk" id="pp-mk"></i>evidence</span> <span class="gray">${P2}</span>`
+  const ppW = $('#pp-w'), ppMk = $('#pp-mk')
+  const underSvg = $('#pp-under'), underPath = $('#pp-under-path')
+  const robotPaper = makeBuddy('robot-free', 760, sPaper)
+  const robotHuh = makeBuddy('robot-free', 1150, sPaper)
+  const sweat = robotHuh.add(document.createElement('div'), 1110, 360, 90)
+  sweat.innerHTML = '<svg viewBox="0 0 30 40"><path d="M15 2 C20 14 27 20 27 27 A12 12 0 0 1 3 27 C3 20 10 14 15 2Z" fill="#8fd3ff" stroke="#1f2a33" stroke-width="2.4"/></svg>'
+  const qmarks = [[170, 640, -14], [880, 560, 12], [280, 1020, 8]].map(([x, y, r]) => { const q = document.createElement('p'); q.className = 'qmark'; q.textContent = '?'; q.style.textShadow = outline(10, '#1f2a33'); q.style.left = x + 'px'; q.style.top = y + 'px'; sPaper.appendChild(q); return { q, r } })
+  let WORD = { x: 540, y: 960, w: 200, h: 60 }
+
+  function camTo(z, fx, fy) {
+    // 把页面坐标 (fx, fy) 放到画面中心偏上处，并缩放 z 倍
+    cam.style.transform = `translate(${540 - fx * z}px, ${900 - fy * z}px) scale(${z})`
+  }
+  function drawPaper(t) {
+    const first = inSc(t, 'paper1'), again = inSc(t, 'paper2')
+    show(sPaper, first || again)
+    if (!(first || again)) return
+    const wx = WORD.x + WORD.w / 2, wy = WORD.y + WORD.h / 2
+    if (first) {
+      const huh = t >= 5.5
+      const push = inOut(seg(t, 3.55, 5.4))
+      const z = huh ? 1.75 + 0.03 * Math.sin((t - 5.5) * 30) * Math.exp(-(t - 5.5) * 5) : lerp(1, 1.4, push)
+      const f = huh ? 1 : push
+      camTo(z, lerp(540, wx, f), lerp(1000, wy, f))
+      ppMk.style.transform = `scaleX(${outCubic(seg(t, 4.3, 4.7))})`
+      ppMk.style.background = huh ? '#ff8a7a' : '#ffd84a'
+      ppNote.style.opacity = 0; underSvg.style.opacity = 0
+      ppBody.querySelectorAll('.gray').forEach((g) => { g.style.opacity = 1 })
+      $('#pp-dim').style.opacity = huh ? 0.4 + 0.6 * seg(t, 5.5, 5.65) : 0
+      vis(robotPaper.el, !huh); vis(robotHuh.el, huh)
+      robotPaper.set({ u: outBack(seg(t, 3.9, 4.35), 1.4), dx: 150, dy: 40, r: -6, ex: -60, ey: -50, blink: blinkAt(t, 5.0) })
+      if (huh) {
+        const h = t - 5.5
+        const jolt = spring(seg(t, 5.5, 6.3))
+        robotHuh.set({ u: 1, dx: 40 + Math.sin(h * 60) * 10 * Math.exp(-h * 3), dy: lerp(400, 80, jolt), eyeS: 1 + 0.45 * outBack(seg(t, 5.55, 5.8), 3), ex: Math.sin(h * 16) * 22, ey: -10, blink: 1 })
+        sweat.style.transform = `translateY(${seg(t, 6.0, 7.3) * 120}px)`
+        sweat.style.opacity = seg(t, 5.9, 6.0) * (1 - seg(t, 7.1, 7.3))
+      }
+      qmarks.forEach(({ q, r }, i) => {
+        const u = seg(t, 5.75 + i * 0.22, 6.05 + i * 0.22)
+        q.style.opacity = u > 0 ? 1 : 0
+        q.style.transform = `scale(${outBack(u, 3)}) rotate(${r + Math.sin(t * 6 + i) * 6}deg)`
+      })
+    } else {
+      const s = t - 16.5
+      camTo(1.4, wx, wy)
+      ppMk.style.transform = 'scaleX(1)'
+      ppBody.querySelectorAll('.gray').forEach((g) => { g.style.opacity = lerp(1, 0.35, seg(t, 16.75, 17.0)) })
+      ppMk.style.background = '#ffd84a'
+      underSvg.style.opacity = 1
+      underPath.style.strokeDashoffset = 100 * (1 - outCubic(seg(t, 16.75, 17.05)))
+      ppNote.style.opacity = seg(t, 16.95, 17.05)
+      ppNote.style.transform = `rotate(-5deg) scale(${0.6 + 0.4 * outBack(seg(t, 16.95, 17.3), 2.4)})`
+      vis(robotPaper.el, true); vis(robotHuh.el, false)
+      robotPaper.set({ u: outBack(seg(t, 16.5, 16.85), 1.4), dx: 150, dy: 40, r: -6, ex: -40, ey: -50, blink: s > 0.5 ? lerp(1, 0.3, outCubic(seg(t, 17.1, 17.25))) : 1, sq: -0.04 * Math.exp(-Math.max(0, t - 17.1) * 6) * (t > 17.1 ? 1 : 0) })
+      qmarks.forEach(({ q }) => { q.style.opacity = 0 })
+      $('#pp-dim').style.opacity = 0
+    }
+  }
+
+  // ================= 3. 大脑加载 =================
+  const sLoad = $('#s-load'), ldFill = $('#ld-fill'), ldPct = $('#ld-pct')
+  const robotLoad = makeBuddy('robot-free', 900, sLoad)
+  function drawLoad(t) {
+    const on = inSc(t, 'load')
+    show(sLoad, on)
+    if (!on) return
+    const p = Math.round(99 * outCubic(seg(t, 7.6, 8.25)))
+    ldFill.style.width = p + '%'
+    const stuck = t > 8.3
+    ldPct.textContent = p + '%'
+    ldPct.style.opacity = stuck ? (Math.floor((t - 8.3) / 0.18) % 2 ? 0.25 : 1) : 1
+    ldPct.style.color = stuck ? '#ff6b6b' : '#f2b544'
+    // 眼珠转圈
+    const a = (t - 7.5) * 14
+    robotLoad.set({ u: outBack(seg(t, 7.5, 7.85), 1.4), dx: 100, dy: 60, ex: Math.cos(a) * 26, ey: Math.sin(a) * 26 - 10, r: Math.sin(t * 9) * (stuck ? 2 : 0) })
+  }
+
+  // ================= 4. 你也这样 =================
+  const sMetoo = $('#s-metoo')
+  const METOO = [['american-shorthair-cat', 9.0], ['happy-fox', 9.66], ['panda', 10.33]].map(([key, t0]) => {
+    const p = document.createElement('div')
+    p.className = 'panel'
+    p.style.background = window.BUDDIES[key].bg
+    sMetoo.appendChild(p)
+    return { p, b: makeBuddy(key, 1250, p), t0 }
+  })
+  function drawMetoo(t) {
+    const on = inSc(t, 'metoo')
+    show(sMetoo, on)
+    if (!on) return
+    METOO.forEach(({ p, b, t0 }, i) => {
+      const live = t >= t0 && t < t0 + 0.67
+      vis(p, live)
+      if (!live) return
+      const u = spring(seg(t, t0, t0 + 0.6))
+      const look = i === 1 ? Math.sin((t - t0) * 30) * 30 : 0
+      b.set({ u: 0.55 + 0.45 * u, dy: 120, s: 1, eyeS: i === 1 ? 1.3 : 1, ex: look, ey: i === 2 ? -30 : 0, blink: i === 0 ? blinkAt(t, t0 + 0.4) : 1, sq: (1 - u) * 0.05 })
+    })
+  }
+
+  // ================= 5. 不是没背 =================
+  const sType = $('#s-type')
+  const TY = [['#ty1', 11.0], ['#ty2', 11.6], ['#ty3', 11.95], ['#ty4', 12.4]].map(([s, t0]) => ({ el: $(s), t0 }))
+  function drawType(t) {
+    const on = inSc(t, 'type')
+    show(sType, on)
+    if (!on) return
+    TY.forEach(({ el, t0 }, i) => {
+      const u = seg(t, t0, t0 + 0.28)
+      el.style.opacity = u > 0 ? 1 : 0
+      const s = lerp(i === 2 ? 2.2 : 1.7, 1, outExpo(u))
+      el.style.transform = `scale(${s}) rotate(${i === 2 ? -3 * outBack(u, 3) : 0}deg)`
+      el.style.filter = u < 1 ? `blur(${(1 - u) * 10}px)` : ''
+    })
+  }
+
+  // ================= 6. 小程序：一道语境题 =================
+  const sApp = $('#s-app'), phone = $('#phone'), scr = $('#scr')
+  const optYes = $('#opt-yes'), optNo = $('#opt-no'), check = $('#opt-check'), ripple = $('#ripple'), fb = $('#fb'), dot4 = $('#dot4'), pn = $('#pn')
+  function drawApp(t) {
+    const on = inSc(t, 'app')
+    show(sApp, on)
+    if (!on) return
+    const enter = outExpo(seg(t, 13.0, 13.5))
+    phone.style.transform = `translateY(${(1 - enter) * 1100}px) rotate(${(1 - enter) * 6}deg)`
+    $('#app-name').style.opacity = seg(t, 13.1, 13.3)
+    $('#app-name').style.transform = `scale(${0.7 + 0.3 * outBack(seg(t, 13.1, 13.45), 2)})`
+    $('#app-sub').style.opacity = seg(t, 13.35, 13.6)
+    const tapped = t >= 14.2
+    const ru = seg(t, 14.15, 14.55)
+    ripple.style.opacity = ru > 0 && ru < 1 ? (1 - ru) : 0
+    ripple.style.transform = `scale(${0.3 + ru * 2.2})`
+    optYes.style.transform = `scale(${t >= 14.12 && t < 14.3 ? 0.95 : 1})`
+    optYes.style.background = tapped ? '#2f4a3c' : '#2e312e'
+    optYes.style.borderColor = tapped ? '#7bc7a4' : '#687068'
+    optYes.style.color = tapped ? '#7bc7a4' : '#f3f4ef'
+    check.style.display = tapped ? 'block' : 'none'
+    optNo.style.opacity = tapped ? 0.4 : 1
+    const fu = outExpo(seg(t, 14.4, 14.75))
+    fb.style.opacity = seg(t, 14.4, 14.5)
+    fb.style.transform = `translateY(${(1 - fu) * 120}px)`
+    const done = t >= 15.55
+    dot4.className = done ? 'dot on' : 'dot'
+    dot4.style.transform = `scale(${1 + 0.8 * Math.sin(seg(t, 15.55, 15.85) * Math.PI)})`
+    pn.textContent = done ? '题组 4 / 4 · 学完 evidence' : '题组 3 / 4'
+    pn.style.color = done ? '#f3f4ef' : '#a5aca3'
+  }
+
+  // ================= 7. 实验记录 =================
+  const sLab = $('#s-lab'), strip = $('#strip'), labMk = $('#lab-mk'), labNote = $('#lab-note')
+  const calf = makeBuddy('calf-scholar', 820, sLab)
+  function drawLab(t) {
+    const on = inSc(t, 'lab')
+    show(sLab, on)
+    if (!on) return
+    const e = outExpo(seg(t, 18.5, 18.85))
+    strip.style.transform = `translateX(${(1 - e) * -900}px) rotate(${-2 - (1 - e) * 8}deg)`
+    labMk.style.transform = `scaleX(${outCubic(seg(t, 18.95, 19.3))})`
+    labNote.style.opacity = seg(t, 19.25, 19.32)
+    labNote.style.transform = `rotate(-4deg) scale(${0.6 + 0.4 * outBack(seg(t, 19.25, 19.55), 2.4)})`
+    calf.set({ u: outBack(seg(t, 18.65, 19.05), 1.5), dx: 80, dy: 40, ex: -40, ey: -30, blink: blinkAt(t, 19.75), r: Math.sin(t * 5) * 1.5 })
+  }
+
+  // ================= 8. 数据 =================
+  const sData = $('#s-data'), plot = $('#plot'), mag = $('#mag'), dtW = $('#dt-w')
+  const R8 = rng(31)
+  svgEl('line', { x1: 0, y1: 500, x2: 860, y2: 500, stroke: 'rgba(241,238,248,.35)', 'stroke-width': 3 }, plot)
+  svgEl('line', { x1: 0, y1: 0, x2: 0, y2: 500, stroke: 'rgba(241,238,248,.35)', 'stroke-width': 3 }, plot)
+  const pts = Array.from({ length: 34 }, (_, i) => ({ x: 30 + (i / 33) * 800 + (R8() - 0.5) * 30, y: 260 + (R8() - 0.5) * 380, d: R8() * 0.5 }))
+  const ptEls = pts.map((p) => svgEl('circle', { cx: p.x, cy: p.y, r: 11, fill: '#b8b0d4' }, plot))
+  const trend = svgEl('path', { d: 'M20 268 C 300 262, 560 274, 840 266', stroke: '#ffd84a', 'stroke-width': 7, fill: 'none', 'stroke-linecap': 'round', pathLength: 100, 'stroke-dasharray': '100 100' }, plot)
+  const dog = makeBuddy('dalmatian-detective', 820, sData)
+  let DTW = { x: 540, y: 1100, w: 200, h: 80 }
+  function drawData(t) {
+    const on = inSc(t, 'data')
+    show(sData, on)
+    if (!on) return
+    pts.forEach((p, i) => { const u = outBack(seg(t, 20.3 + p.d * 0.5, 20.55 + p.d * 0.5), 2.5); ptEls[i].setAttribute('r', 11 * u) })
+    trend.setAttribute('stroke-dashoffset', 100 * (1 - outCubic(seg(t, 20.5, 21.0))))
+    // 放大镜从右侧移到 evidence 上
+    const mu = inOut(seg(t, 20.45, 20.95))
+    const tx = DTW.x + DTW.w / 2 - 140, ty = DTW.y + DTW.h / 2 - 140
+    mag.style.transform = `translate(${lerp(1100, tx, mu)}px, ${lerp(1500, ty, mu)}px) rotate(${(1 - mu) * 30}deg)`
+    const hit = outBack(seg(t, 20.95, 21.25), 3)
+    dtW.style.transform = `scale(${1 + 0.12 * hit})`
+    dtW.style.color = t > 20.95 ? '#ffe28a' : '#f1eef8'
+    dtW.style.fontWeight = 700
+    dog.set({ u: outBack(seg(t, 20.3, 20.7), 1.5), dx: -60, dy: 150, ex: 30, ey: -10, blink: blinkAt(t, 21.6), sq: t > 21.15 ? -0.05 * Math.exp(-(t - 21.15) * 6) : 0 })
+  }
+
+  // ================= 9. 伙伴们 =================
+  const sCrew = $('#s-crew')
+  const CREW = ['robot-free', 'american-shorthair-cat', 'dalmatian', 'calf', 'happy-fox', 'panda', 'ragdoll-cat', 'robot', 'strawberry']
+  const tiles = CREW.map((key, i) => {
+    const tile = document.createElement('div')
+    tile.className = 'tile'
+    tile.style.background = window.BUDDIES[key].bg
+    tile.style.left = (66 + (i % 3) * 324) + 'px'
+    tile.style.top = (520 + Math.floor(i / 3) * 324) + 'px'
+    sCrew.appendChild(tile)
+    return { tile, b: makeBuddy(key, 300, tile), i }
+  })
+  // 按跳动顺序出场（节拍上的八分音符）
+  const CREW_ORDER = [4, 0, 8, 2, 6, 1, 7, 3, 5]
+  function drawCrew(t) {
+    const on = inSc(t, 'crew')
+    show(sCrew, on)
+    if (!on) return
+    tiles.forEach(({ tile, b, i }) => {
+      const t0 = 22.35 + CREW_ORDER.indexOf(i) * 0.25
+      const u = outBack(seg(t, t0, t0 + 0.35), 2.2)
+      tile.style.transform = `scale(${u}) rotate(${(1 - u) * (i % 2 ? 12 : -12)}deg)`
+      b.set({ W: 300, H: 300, u: 1, blink: blinkAt(t, t0 + 0.6 + (i % 3) * 0.37, 24.3 - (i % 4) * 0.1), ex: Math.sin(t * 3 + i) * 14 })
+    })
+  }
+
+  // ================= 10. 换个句子也认得 =================
+  const sWin = $('#s-win'), fcard2 = $('#fcard2'), x37 = $('#x37'), x37s = $('#x37s'), conf = $('#confetti')
+  const robotWin = makeBuddy('robot-free', 1150, sWin)
+  const R10 = rng(77)
+  const CONF = Array.from({ length: 70 }, () => ({ x: 540 + (R10() - 0.5) * 200, y: 820, vx: (R10() - 0.5) * 1500, vy: -900 - R10() * 1100, r: R10() * 360, vr: (R10() - 0.5) * 900, c: ['#e5484d', '#f2b544', '#7bc7a4', '#5979de', '#ffffff', '#9a90ba'][Math.floor(R10() * 6)], w: 18 + R10() * 16 }))
+  const confEls = CONF.map((c) => svgEl('rect', { width: c.w, height: c.w * 0.5, fill: c.c, rx: 3 }, conf))
+  function drawWin(t) {
+    const on = inSc(t, 'win')
+    show(sWin, on)
+    if (!on) return
+    const e = outBack(seg(t, 24.75, 25.1), 1.6)
+    fcard2.style.transform = `translateY(${(1 - e) * 200}px) rotate(${-2 * e}deg) scale(${0.7 + 0.3 * e})`
+    fcard2.style.opacity = seg(t, 24.75, 24.85)
+    ;[['#row1', 25.15], ['#row2', 25.4]].forEach(([s, t0]) => {
+      const el = $(s), u = outBack(seg(t, t0, t0 + 0.3), 2.4)
+      el.style.opacity = seg(t, t0, t0 + 0.05)
+      el.style.transform = `translateX(${(1 - u) * -60}px)`
+      $('svg', el).style.transform = `scale(${outBack(seg(t, t0 + 0.12, t0 + 0.4), 3)})`
+    })
+    x37s.style.transform = `scaleX(${outCubic(seg(t, 25.75, 25.95))})`
+    x37.style.transform = `rotate(${8 * outBack(seg(t, 25.75, 26.0), 3)}deg)`
+    const cheer = seg(t, 25.75, 26.1)
+    robotWin.set({ u: outBack(seg(t, 24.8, 25.2), 1.4), dx: 60, dy: 40, handY: -160 * outBack(cheer, 2), hand: 18 * Math.sin(t * 14) * cheer, blink: lerp(1, 0.3, outCubic(cheer)), sq: -0.05 * Math.sin(seg(t, 25.75, 26.2) * Math.PI) })
+    const ct = t - 25.8
+    CONF.forEach((c, i) => {
+      if (ct < 0) { confEls[i].setAttribute('opacity', 0); return }
+      const x = c.x + c.vx * ct, y = c.y + c.vy * ct + 0.5 * 2400 * ct * ct
+      confEls[i].setAttribute('opacity', 1)
+      confEls[i].setAttribute('transform', `translate(${x} ${y}) rotate(${c.r + c.vr * ct}) scale(${1}, ${Math.cos((c.r + c.vr * ct) * 0.05)})`)
+    })
+  }
+
+  // ================= 11. 落版 =================
+  const sEnd = $('#s-end')
+  const endRobot = makeBuddy('robot-free', 680, sEnd)
+  const endDog = makeBuddy('dalmatian-street-cool', 640, sEnd)
+  function drawEnd(t) {
+    const on = inSc(t, 'end') || t >= 30
+    show(sEnd, on)
+    if (!on) return
+    ;[['#end-name', 27.05, 1.25], ['#end-en', 27.3, 1.4], ['#end-line', 27.45, 1], ['#end-pill', 27.65, 1]].forEach(([s, t0, from]) => {
+      const el = $(s), u = seg(t, t0, t0 + 0.4)
+      el.style.opacity = seg(t, t0, t0 + 0.1)
+      const sc = lerp(from, 1, outExpo(u))
+      el.style.transform = (s === '#end-pill' ? 'translateX(-50%) ' : '') + `translateY(${(1 - outExpo(u)) * 40}px) scale(${sc})`
+    })
+    endRobot.set({ u: outBack(seg(t, 27.8, 28.2), 1.4), dx: 90, dy: 60, ex: -40, ey: -40, blink: blinkAt(t, 28.7, 29.5) })
+    endDog.set({ u: outBack(seg(t, 28.0, 28.4), 1.4), dx: -90, dy: 80, ex: 30, ey: -10, blink: blinkAt(t, 29.0) })
+  }
+
+  // ================= 镜头抖动与闪白 =================
+  const shakeEl = $('#shake'), flash = $('#flash')
+  const HITS = [[3.5, 14], [5.5, 26], [11.0, 10], [11.95, 18], [16.5, 8], [25.75, 10]]
+  const FLASH = [3.5, 5.5, 13.0, 16.5, 22.25, 27.0]
+  function drawFx(t) {
+    let dx = 0, dy = 0
+    HITS.forEach(([a, amp]) => { const d = t - a; if (d >= 0 && d < 0.4) { const k = amp * Math.exp(-d * 12); dx += Math.sin(d * 90) * k; dy += Math.cos(d * 70) * k } })
+    shakeEl.style.transform = `translate(${dx}px, ${dy}px)`
+    let f = 0
+    FLASH.forEach((a) => { const d = t - a; if (d >= 0 && d < 0.12) f = Math.max(f, 0.55 * (1 - d / 0.12)) })
+    flash.style.opacity = f
+  }
+
+  function seek(t) {
+    drawCram(t); drawPaper(t); drawLoad(t); drawMetoo(t); drawType(t); drawApp(t)
+    drawLab(t); drawData(t); drawCrew(t); drawWin(t); drawEnd(t); drawFx(t)
+    CAPS.forEach((s) => drawSticker(s, t))
+  }
+
+  // 量出关键单词在页面中的位置（未变换时）
+  function measure() {
+    show(sPaper, true); cam.style.transform = ''
+    WORD = { x: ppW.offsetLeft + ppBody.offsetLeft, y: ppW.offsetTop + ppBody.offsetTop, w: ppW.offsetWidth, h: ppW.offsetHeight }
+    ppNote.style.left = (WORD.x - 30) + 'px'
+    ppNote.style.top = (WORD.y - 104) + 'px'
+    underSvg.setAttribute('width', WORD.w + 40); underSvg.setAttribute('height', 40)
+    underSvg.style.left = (WORD.x - 20) + 'px'; underSvg.style.top = (WORD.y + WORD.h - 6) + 'px'
+    underPath.setAttribute('d', `M6 22 C ${WORD.w * 0.3} 10, ${WORD.w * 0.7} 34, ${WORD.w + 34} 14`)
+    underPath.setAttribute('pathLength', 100); underPath.style.strokeDasharray = '100 100'
+    show(sPaper, false)
+    show(sData, true)
+    const sent = $('#dt-sent')
+    DTW = { x: dtW.offsetLeft + sent.offsetLeft, y: dtW.offsetTop + sent.offsetTop, w: dtW.offsetWidth, h: dtW.offsetHeight }
+    dtW.style.transformOrigin = '50% 60%'
+    show(sData, false)
+    const lw = $('#lab-w'), labNoteEl = $('#lab-note')
+    show(sLab, true)
+    const r = lw.getBoundingClientRect()
+    labNoteEl.style.left = (r.left - 30) + 'px'; labNoteEl.style.top = (strip.getBoundingClientRect().bottom + 40) + 'px'
+    show(sLab, false)
+  }
+
+  window.__duration = 30
+  window.__seek = seek
+  const FONTS = ['500 40px Satoshi', '700 40px Satoshi', '900 40px Satoshi', '400 40px "Tsanger YuYang"', '700 40px "Tsanger YuYang"', '400 40px "Libre Baskerville"', 'italic 400 40px "Libre Baskerville"', '700 40px Caveat']
+  window.__ready = Promise.all([...FONTS.map((f) => document.fonts.load(f, 'aA证')), ...[...document.images].map((im) => (im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r })))]).then(() => { measure(); seek(0) })
+
+  if (location.search.includes('play')) {
+    window.__ready.then(() => {
+      const start = performance.now()
+      const loop = () => { seek(((performance.now() - start) / 1000) % window.__duration); requestAnimationFrame(loop) }
+      loop()
+    })
+  }
+})()
+</script>
+</body>
+</html>

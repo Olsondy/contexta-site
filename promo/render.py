@@ -13,7 +13,8 @@ async def main(a):
     async with async_playwright() as p:
         b = await p.chromium.launch(channel='chrome', args=['--allow-file-access-from-files', '--disable-lcd-text', '--font-render-hinting=none'])
         pg = await b.new_page(viewport={'width': 1080, 'height': 1920}, device_scale_factor=1)
-        await pg.goto((HERE / 'comp.html').as_uri())
+        await pg.goto((HERE / a.comp).as_uri())
+        pg.on('pageerror', lambda e: print('PAGE ERROR', e))
         await pg.evaluate('window.__ready')
         await pg.wait_for_timeout(300)
         if a.stills:
@@ -41,4 +42,5 @@ ap.add_argument('--fps', type=int, default=60)
 ap.add_argument('--out', default='out/contexta-15s.mp4')
 ap.add_argument('--audio', default='')
 ap.add_argument('--stills', default='')
+ap.add_argument('--comp', default='comp.html')
 asyncio.run(main(ap.parse_args()))

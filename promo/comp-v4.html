@@ -145,10 +145,8 @@ body { font-family: var(--cn); color: var(--ink); -webkit-font-smoothing: antial
 
 /* 11. 落版 */
 #s-end { background: var(--ivory); }
-.end-name { position: absolute; left: 0; width: 1080px; top: 560px; text-align: center; font: 700 200px/1 var(--cn); color: var(--ink); letter-spacing: .04em; }
-.end-en { position: absolute; left: 0; width: 1080px; top: 810px; text-align: center; font: 900 66px/1 var(--en); color: var(--ink); letter-spacing: .02em; }
+.end-name { position: absolute; left: 0; width: 1080px; top: 540px; text-align: center; font: 700 128px/1.28 var(--cn); color: var(--ink); }
 .end-line { position: absolute; left: 0; width: 1080px; top: 920px; text-align: center; font: 400 50px/1 var(--cn); color: #59605a; }
-.end-pill { position: absolute; left: 50%; top: 1060px; transform: translateX(-50%); height: 120px; padding: 0 56px; border-radius: 60px; background: var(--ink); color: var(--ivory); font: 700 54px/120px var(--cn); white-space: nowrap; }
 #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
 </style>
 </head>
@@ -186,7 +184,7 @@ body { font-family: var(--cn); color: var(--ink); -webkit-font-smoothing: antial
   </section>
 
   <section class="scene" id="s-app">
-    <p class="app-name" id="app-name">语境自修</p>
+    <p class="app-name" id="app-name">微信小程序</p>
     <p class="app-sub" id="app-sub">把单词放回真实句子里练</p>
     <div class="phone" id="phone"><div class="scr" id="scr">
       <p class="meta"><span>学术阅读词汇</span><span>判断题</span></p>
@@ -223,10 +221,8 @@ body { font-family: var(--cn); color: var(--ink); -webkit-font-smoothing: antial
   </section>
 
   <section class="scene" id="s-end">
-    <p class="end-name" id="end-name">语境自修</p>
-    <p class="end-en" id="end-en">Contexta</p>
-    <p class="end-line" id="end-line">把单词放回语境里练</p>
-    <p class="end-pill" id="end-pill">微信搜索「语境自修」</p>
+    <p class="end-name" id="end-name">一个单词，<br>一次语境练习。</p>
+    <p class="end-line" id="end-line">选一个词，做完它的语境题组</p>
   </section>
 
   <div id="caps"></div>
@@ -648,11 +644,11 @@ body { font-family: var(--cn); color: var(--ink); -webkit-font-smoothing: antial
     const on = inSc(t, 'end') || t >= 30
     show(sEnd, on)
     if (!on) return
-    ;[['#end-name', 27.05, 1.25], ['#end-en', 27.3, 1.4], ['#end-line', 27.45, 1], ['#end-pill', 27.65, 1]].forEach(([s, t0, from]) => {
+    ;[['#end-name', 27.05, 1.25], ['#end-line', 27.4, 1]].forEach(([s, t0, from]) => {
       const el = $(s), u = seg(t, t0, t0 + 0.4)
       el.style.opacity = seg(t, t0, t0 + 0.1)
       const sc = lerp(from, 1, outExpo(u))
-      el.style.transform = (s === '#end-pill' ? 'translateX(-50%) ' : '') + `translateY(${(1 - outExpo(u)) * 40}px) scale(${sc})`
+      el.style.transform = `translateY(${(1 - outExpo(u)) * 40}px) scale(${sc})`
     })
     endRobot.set({ u: outBack(seg(t, 27.8, 28.2), 1.4), dx: 90, dy: 60, ex: -40, ey: -40, blink: blinkAt(t, 28.7, 29.5) })
     endDog.set({ u: outBack(seg(t, 28.0, 28.4), 1.4), dx: -90, dy: 80, ex: 30, ey: -10, blink: blinkAt(t, 29.0) })

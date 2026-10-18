@@ -1,16 +1,13 @@
 # 宣传短片
 
-Contexta｜语境自修的竖屏宣传短片（1080×1920，30fps）。画面、配乐与音效全部由本目录的代码生成，没有使用第三方版权素材。
+Contexta 的竖屏宣传短片（1080×1920，30fps）。画面、配乐与音效全部由本目录的代码生成，没有使用第三方版权素材。
 
 ## 成片
 
 | 文件 | 时长 | 内容 |
 | --- | --- | --- |
 | `out/contexta-30s-v4-vo.mp4` | 30 秒 | **主版本**：v4 画面，加中文解说 |
-| `out/contexta-30s-v4.mp4` | 30 秒 | v4 无解说版（学习伙伴）：读书机器人猛背 evidence 37 遍 → 论文里它是动词，当场懵掉 → 伙伴们“我也是” → 「不是没背，是没在语境里见过它」→ 小程序一道语境题（约 3.5 秒）→ 论文、实验记录、数据里都认得 → 伙伴们 → 落版 |
-| `out/contexta-30s.mp4` | 30 秒 | v3：词卡学完 → 四点聚成「语境透镜」→ 三个语境世界 → 落版 |
-| `out/contexta-15s.mp4` | 15 秒 | evidence 词性反差钩子 |
-| `out/contexta-15s-v1.mp4` | 15 秒 | 早期的流程演示版，留作对照 |
+| `out/contexta-30s-v4.mp4` | 30 秒 | 无解说版，也是混入解说时的画面底片。故事：读书机器人猛背 evidence 37 遍 → 论文里它是动词，当场懵掉 → 伙伴们“我也是” → 「不是没背，是没在语境里见过它」→ 小程序一道语境题（约 3.5 秒）→ 论文、实验记录、数据里都认得 → 伙伴们 → 落版「一个单词，一次语境练习。」。画面和解说都不出现产品名 |
 
 ## 工作方式
 
@@ -68,7 +65,9 @@ python3 audio-v4.py --sfx-only  # 只含音效的分轨 → out/sfx-v4.wav
 python3 mix-vo-v4.py --bed out/bgm-daw.wav
 ```
 
-## 其他版本
+## 早期版本
+
+v3（`comp.html` + `audio.py`，30 秒「语境透镜」）和 15 秒版（`comp-15s.html` + `audio-15s.py`）的合成页与配乐脚本保留在目录里，成片不再随仓库保存，需要时重新渲染：
 
 ```bash
 python3 audio.py && python3 render.py --audio out/audio.wav --out out/contexta-30s.mp4
@@ -80,5 +79,5 @@ python3 render.py --comp comp-v4.html --stills 3.6,8,15   # 只导出指定时�
 
 - 片中的英文句子、词义与选项取自 `contexta-server` 本地库中已审核的 evidence、analyze 内容；语境场景是为宣传绘制的示意。这些内容在正式发布前如有修改，需要同步更新合成页。
 - v4 的角色是小程序学习伙伴的分层 SVG，复制自 `contexta-server/resources/buddies/bundles`，清单在 `buddies/buddies.js`。
-- `fonts/` 中的 Libre Baskerville 与 Caveat 为 OFL 授权，许可文件随附。仓耳渔阳体是按合成页用字生成的子集；修改字幕后需要重新生成子集，方法同 `../scripts/subset-fonts.sh`。
+- `fonts/` 中的 Libre Baskerville 与 Caveat 为 OFL 授权，许可文件随附。仓耳渔阳体是按三个合成页用字生成的子集；修改合成页中文后运行 `./subset-fonts.sh` 重新生成。
 - 生成的 WAV（包括 `out/vo/` 里的解说）和静帧都被 Git 忽略，成片 mp4 和 MIDI 随仓库保存。在新环境里重新混音之前，先用 `tts-vo-v4.py` 生成 `CUES` 里用到的版本。

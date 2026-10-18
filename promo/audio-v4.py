@@ -1,9 +1,10 @@
 """合成 v4（学习伙伴版）30 秒短片的配乐与音效（纯 Python 标准库，全部原创合成，无第三方版权素材）。
-输出 out/audio-v4.wav：48kHz 立体声 30 秒。事件时间与 comp-v4.html 的时间轴一致。
+输出 out/audio-v4.wav：48kHz 立体声 30 秒。加 --sfx-only 只输出音效分轨 out/sfx-v4.wav
+（去掉节拍、铺底和旋律性点缀，配合 bgm-midi-v4.py 在 DAW 里重做配乐）。事件时间与 comp-v4.html 的时间轴一致。
 结构：120 BPM 轻快节拍 → 3.5 秒唱片急停（论文里懵了）→ 9 秒半速回来 → 11 秒四记重音 →
 13 秒全速节拍一直到 27 秒 → 落版和弦。
 """
-import math, random, struct, wave, pathlib
+import math, random, struct, sys, wave, pathlib
 
 SR, DUR = 48000, 30.0
 N = int(SR * DUR)
@@ -12,6 +13,7 @@ R = [0.0] * N
 rng = random.Random(11)
 TAU = 2 * math.pi
 BEAT = 0.5
+SFX_ONLY = '--sfx-only' in sys.argv
 
 
 def add(t0, samples, gain=1.0, pan=0.0):
@@ -22,6 +24,12 @@ def add(t0, samples, gain=1.0, pan=0.0):
         if 0 <= i < N:
             L[i] += v * gl
             R[i] += v * gr
+
+
+def mus(t0, samples, gain=1.0, pan=0.0):
+    # 配乐部分：--sfx-only 时跳过（样本照常计算，保持随机序列不变）
+    if not SFX_ONLY:
+        add(t0, samples, gain, pan)
 
 
 def env(n, a, d):
@@ -128,23 +136,25 @@ def groove(start, stop, half=False, gain=1.0):
         bar = int((t - start) / (BEAT * 4)) % 4
         ch = CHORDS[bar]
         if not half or i % 2 == 0:
-            add(t, kick(), 0.5 * gain)
-        add(t + BEAT / 2, hat(), 0.09 * gain, pan=0.3)
-        add(t, hat(0.03), 0.04 * gain, pan=-0.3)
+            mus(t, kick(), 0.5 * gain)
+        mus(t + BEAT / 2, hat(), 0.09 * gain, pan=0.3)
+        mus(t, hat(0.03), 0.04 * gain, pan=-0.3)
         if i % 2 == 1:
-            add(t, clap(), 0.16 * gain, pan=-0.05)
+            mus(t, clap(), 0.16 * gain, pan=-0.05)
         # 跳跃低音：根音 + 八度
-        add(t, pluck(ch[0], 0.3, 12), 0.16 * gain)
-        add(t + BEAT / 2, pluck(ch[0] * 2, 0.22, 14), 0.08 * gain)
+        mus(t, pluck(ch[0], 0.3, 12), 0.16 * gain)
+        mus(t + BEAT / 2, pluck(ch[0] * 2, 0.22, 14), 0.08 * gain)
         # 切分和弦
         if i % 2 == 0:
             for j, f in enumerate(ch[1:]):
-                add(t + BEAT * 0.75, pluck(f * 2, 0.25, 16), 0.035 * gain, pan=-0.4 + j * 0.4)
+                mus(t + BEAT * 0.75, pluck(f * 2, 0.25, 16), 0.035 * gain, pan=-0.4 + j * 0.4)
         t += BEAT
         i += 1
 
 
 def pad(t0, t1, gain=0.010):
+    if SFX_ONLY:
+        return
     i0, i1 = int(t0 * SR), int(t1 * SR)
     for k in range(i0, min(N, i1)):
         t = k / SR
@@ -176,7 +186,7 @@ while t < 2.4:
     t += 0.001
 add(2.32, pop(1100), 0.25)
 for k, f in enumerate([1046.5, 1318.5, 1568.0, 2093.0]):
-    add(2.5 + k * 0.05, tone(f, 0.7, d=0.22), 0.06, pan=-0.3 + k * 0.2)
+    mus(2.5 + k * 0.05, tone(f, 0.7, d=0.22), 0.06, pan=-0.3 + k * 0.2)
 
 # ---------- 2. 论文：唱片急停 → 懵 ----------
 add(3.48, scratch(), 0.42)
@@ -201,15 +211,15 @@ add(8.68, glide(110, 98, 0.32, d=0.3, square=True), 0.16)
 # ---------- 4. 你也这样 ----------
 for k, t0 in enumerate([9.0, 9.66, 10.33]):
     add(t0, pop(500 + k * 220), 0.28)
-    add(t0 + 0.02, tone([523.25, 659.25, 784.0][k], 0.4, d=0.12), 0.06)
+    mus(t0 + 0.02, tone([523.25, 659.25, 784.0][k], 0.4, d=0.12), 0.06)
 
 # ---------- 5. 不是没背，是没在语境里见过它 ----------
 for t0, heavy in [(11.0, 0), (11.6, 0), (11.95, 1), (12.4, 0)]:
-    add(t0, kick(0.45, 48, 130), 0.55 + heavy * 0.15)
+    mus(t0, kick(0.45, 48, 130), 0.55 + heavy * 0.15)
     add(t0, noise(0.25, 0.001, 0.08, 0.35), 0.12 + heavy * 0.08)
     if heavy:
         for j, f in enumerate((261.63, 329.63, 392.0, 523.25)):
-            add(t0, tone(f, 0.9, d=0.4, harm=(1, 0.5, 0.25)), 0.05, pan=-0.3 + j * 0.2)
+            mus(t0, tone(f, 0.9, d=0.4, harm=(1, 0.5, 0.25)), 0.05, pan=-0.3 + j * 0.2)
 
 # ---------- 6. 小程序 ----------
 add(12.85, sweep(0.5, 0.01, 0.35), 0.25)                  # 手机上滑
@@ -217,7 +227,7 @@ add(14.2, noise(0.03, 0.001, 0.01, 0.8), 0.25)            # 轻点
 add(14.3, tone(1046.5, 0.6, d=0.18), 0.08)
 add(14.38, tone(1568.0, 0.7, d=0.22), 0.07)
 for k, f in enumerate([783.99, 1046.5, 1318.5, 1568.0]):  # 学完
-    add(15.55 + k * 0.06, tone(f, 0.7, d=0.22), 0.05, pan=-0.3 + k * 0.2)
+    mus(15.55 + k * 0.06, tone(f, 0.7, d=0.22), 0.05, pan=-0.3 + k * 0.2)
 
 # ---------- 7–8. 再遇见：论文 / 实验记录 / 数据 ----------
 for w in [16.42, 18.42, 20.17, 22.17, 24.67]:
@@ -236,21 +246,21 @@ add(21.15, pop(650), 0.22)
 PENTA = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5, 1568.0]
 for k in range(9):
     add(22.35 + k * 0.25, pop(700 + k * 60), 0.16, pan=-0.4 + (k % 3) * 0.4)
-    add(22.37 + k * 0.25, pluck(PENTA[k], 0.3, 10), 0.05, pan=-0.4 + (k % 3) * 0.4)
+    mus(22.37 + k * 0.25, pluck(PENTA[k], 0.3, 10), 0.05, pan=-0.4 + (k % 3) * 0.4)
 
 # ---------- 10. 换个句子也认得 ----------
 add(25.27, pop(800), 0.2)
 add(25.52, pop(950), 0.2)
 add(25.75, sweep(0.2, 0.2, 0.5), 0.1)                     # 划掉 ×37
 for k, f in enumerate([523.25, 659.25, 783.99, 1046.5, 1318.5]):
-    add(25.8 + k * 0.05, tone(f, 0.8, d=0.3), 0.05, pan=-0.4 + k * 0.2)
+    mus(25.8 + k * 0.05, tone(f, 0.8, d=0.3), 0.05, pan=-0.4 + k * 0.2)
 for k in range(40):                                       # 彩纸
     add(25.8 + rng.uniform(0, 0.9), noise(0.015, 0.001, 0.005, 0.9), 0.04, pan=rng.uniform(-0.8, 0.8))
 
 # ---------- 11. 落版 ----------
 add(26.95, sweep(0.4, 0.01, 0.2), 0.15)
 for k, f in enumerate([65.41, 130.81, 196.0, 261.63, 329.63, 392.0, 523.25]):
-    add(27.05 + k * 0.02, tone(f, 2.8, a=0.02, d=1.2), 0.065, pan=-0.4 + k * 0.13)
+    mus(27.05 + k * 0.02, tone(f, 2.8, a=0.02, d=1.2), 0.065, pan=-0.4 + k * 0.13)
 add(27.8, pop(700), 0.15, pan=0.4)
 add(28.0, pop(800), 0.15, pan=-0.4)
 
@@ -262,7 +272,7 @@ for k in range(int(29.2 * SR), N):
 
 peak = max(max(abs(x) for x in L), max(abs(x) for x in R))
 g = 0.89 / peak
-out = pathlib.Path(__file__).resolve().parent / 'out' / 'audio-v4.wav'
+out = pathlib.Path(__file__).resolve().parent / 'out' / ('sfx-v4.wav' if SFX_ONLY else 'audio-v4.wav')
 out.parent.mkdir(exist_ok=True)
 with wave.open(str(out), 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)

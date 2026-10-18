@@ -1,4 +1,5 @@
 .DS_Store
 .impeccable/review/
 promo/out/*.wav
+promo/out/vo/
 promo/out/still-*.png

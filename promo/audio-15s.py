@@ -1,5 +1,5 @@
 """合成短片配乐与音效（纯 Python 标准库，全部原创合成，无第三方版权素材）。
-输出 out/audio.wav：48kHz 立体声 15 秒。事件时间与 comp.html 的时间轴一致。
+输出 out/audio-15s.wav：48kHz 立体声 15 秒。事件时间与 comp-15s.html 的时间轴一致。
 """
 import math, random, struct, wave, pathlib
 

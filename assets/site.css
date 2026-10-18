@@ -1,4 +1,4 @@
-/* Contexta｜语境自修 官网。色值与字体沿用小程序设计令牌（contexta-client/src/styles/tokens.css）。 */
+/* Contexta｜语境助手 官网。色值与字体沿用小程序设计令牌（contexta-client/src/styles/tokens.css）。 */
 
 @font-face { font-family: "Satoshi"; src: url("fonts/satoshi-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Satoshi"; src: url("fonts/satoshi-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
@@ -163,6 +163,9 @@ mark { background: linear-gradient(180deg, transparent 70%, var(--highlight) 70%
 .is-missing .qr__fallback { display: block; position: absolute; inset: 0; margin: auto; width: 44%; height: 44%; }
 .is-missing .entry__code { background: var(--surface-muted); }
 
+.open { display: none; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border-radius: 14px; background: var(--accent); color: var(--canvas); font: 700 17px/1 var(--font-cn); text-decoration: none; transition: transform 0.2s var(--ease-out); }
+.open:active { transform: scale(0.96); }
+.open--dark { background: var(--canvas); color: var(--ink); }
 .copy { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--canvas); font: 700 15px/1 var(--font-cn); cursor: pointer; transition: transform 0.2s var(--ease-out); }
 .copy:active { transform: scale(0.96); }
 .copy--dark { background: var(--canvas); color: var(--ink); }
@@ -352,6 +355,10 @@ mark { background: linear-gradient(180deg, transparent 70%, var(--highlight) 70%
   .hero__lead { margin-top: 14px; font-size: 16px; }
   .entry--scan { display: none; }
   .entry--search { display: flex; margin-top: 28px; }
+  /* 配置了跳转链接时，搜索入口上方再给一个直接打开的按钮 */
+  .has-open-link .entry--open { display: flex; margin-top: 28px; }
+  .has-open-link .entry--open + .entry--search { margin-top: 12px; }
+  .has-open-link .get__open { display: flex; margin-top: 32px; }
   .phone { width: 280px; border-radius: 44px; }
   .phone__screen { border-radius: 34px; padding: 48px 16px 18px; gap: 12px; }
   .ps-word { font-size: 38px; }

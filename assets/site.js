@@ -162,11 +162,27 @@
     const markMissing = () => {
       qr.classList.add('is-missing')
       const cap = qr.querySelector('[data-qr-cap]')
-      if (cap) cap.textContent = '微信小程序 · 语境自修'
+      if (cap) cap.textContent = '微信小程序 · 语境助手'
     }
     if (img.complete && img.naturalWidth === 0) markMissing()
     img.addEventListener('error', markMissing)
   })
+
+  // 手机端“打开小程序”：跳转地址配置在 <meta name="ctxa-miniprogram-link">
+  const openLink = document.querySelector('meta[name="ctxa-miniprogram-link"]')?.content.trim()
+  if (openLink) {
+    document.documentElement.classList.add('has-open-link')
+    document.querySelectorAll('[data-open]').forEach((link) => { link.href = openLink })
+    // 顶栏按钮在桌面端仍跳到结尾的小程序码，只在手机宽度直接打开
+    const mobile = matchMedia('(max-width: 760px)')
+    document.querySelectorAll('[data-open-mobile]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        if (!mobile.matches) return
+        event.preventDefault()
+        location.href = openLink
+      })
+    })
+  }
 
   // 复制小程序名称
   const toast = document.querySelector('[data-toast]')
@@ -176,9 +192,9 @@
       try {
         await navigator.clipboard.writeText(button.dataset.copy)
         button.textContent = '已复制'
-        toast.textContent = '已复制「语境自修」，打开微信搜索即可。'
+        toast.textContent = '已复制「语境助手」，打开微信搜索即可。'
       } catch {
-        toast.textContent = '复制没有成功，请在微信中手动搜索「语境自修」。'
+        toast.textContent = '复制没有成功，请在微信中手动搜索「语境助手」。'
       }
       setTimeout(() => { button.textContent = original }, 1800)
     })

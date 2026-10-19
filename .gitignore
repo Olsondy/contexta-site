@@ -3,3 +3,7 @@
 promo/out/*.wav
 promo/out/vo/
 promo/out/still-*.png
+promo/motion-v5/.om/
+promo/motion-v5/assets/sound.wav
+promo/motion-v6/.om/
+promo/motion-v6/assets/sound.wav

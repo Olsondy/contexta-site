@@ -1,0 +1,17 @@
+Jaldi
+Copyright 2014 The Jaldi Project Authors
+Licensed under the SIL Open Font License, Version 1.1.
+Source package: @fontsource/jaldi
+
+Satoshi
+Copyright 2017–2021 Indian Type Foundry. All rights reserved.
+Source: Fontshare / Indian Type Foundry
+License: ITF Free Font License (FFL), Version 2.0 - 17 Aug 2026
+License terms: https://www.fontshare.com/licenses/itf-ffl
+FFL permits self-hosting on our own servers/CDN for our own websites and applications, and embedding in mobile/desktop applications. Keep the files unmodified and do not expose them as a public download service.
+
+仓耳渔阳体 W01–W05 / Tsanger YuYang W01–W05
+Copyright © 北京仓耳文字技术有限公司（仓耳字库）。
+依据《仓耳字库免费商用字体授权声明》使用。授权允许商业使用、嵌入、修改、子集化与再分发；不得单独销售字体文件，修改或子集版本继续遵循同一授权。
+完整 TTF、H5 子集和对象存储完整 WOFF/WOFF2 均属于应用分发的一部分，不作为独立字体商品销售。
+Official license statement: https://www.tsanger.cn/107.html

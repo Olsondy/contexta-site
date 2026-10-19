@@ -8,6 +8,8 @@ Contexta 的竖屏宣传短片（1080×1920，30fps）。画面、配乐与音�
 | --- | --- | --- |
 | `out/contexta-30s-v4-vo.mp4` | 30 秒 | **主版本**：v4 画面，加中文解说 |
 | `out/contexta-30s-v4.mp4` | 30 秒 | 无解说版，也是混入解说时的画面底片。故事：读书机器人猛背 evidence 37 遍 → 论文里它是动词，当场懵掉 → 伙伴们“我也是” → 「不是没背，是没在语境里见过它」→ 小程序一道语境题（约 3.5 秒）→ 论文、实验记录、数据里都认得 → 伙伴们 → 落版「一个单词，一次语境练习。」。画面和解说都不出现产品名 |
+| `motion-v5/out/motion-v5-v3.mp4` | 30 秒 | **v5「荧光笔」**：横屏 16:9，无口播，与 v4 互不相关的另一支。一支荧光笔划过 prize → 三个真实句子里它分别是「重视」「珍视」「珍贵的」→ 索引行 → 「意思，在句子里。」→ 小程序里做这个词的语境题、看解析、学完盖章 → 薰衣草整屏落在语境透镜标志上。同样不出现产品名 |
+| `motion-v6/out/motion-v6-v1.mp4` | 30 秒 | **v6「书桌拼贴」**（v5 的方向 B）：横屏 16:9，无口播。俯拍书桌：词卡上 prize = 奖项被铅笔划掉 → 三张句子纸条滑进来，荧光笔涂过、圈出线索、手写真正的意思 → 手写「意思，在句子里。」→ 手机滑上书桌做这道题、看最强迷惑项 → 镜头甩回词卡盖上学完印章 → 纸张收拢，新卡片上画出语境透镜标志。不出现产品名 |
 
 ## 工作方式
 
@@ -17,6 +19,20 @@ Contexta 的竖屏宣传短片（1080×1920，30fps）。画面、配乐与音�
 - **解说**（仅 v4）：本地 GPU 语音服务逐句生成，`mix-vo-v4.py` 把它们摆到时间轴上，与配乐混音后换进 mp4 的音轨。
 
 依赖：Python 3、`playwright`（使用本机 Chrome）、ffmpeg。生成解说时还需要能访问运行 `qwen-zh-cn-narrator-v1` 音色的语音服务。
+
+## 制作 v5 / v6（huashu-motion）
+
+v5 和 v6 各是一个 [huashu-motion](https://github.com/alchaincyf/huashu-motion) 工程（技能装在仓库的 `.claude/skills/huashu-motion`，来源锁定在 `skills-lock.json`）：合成页 `motion-v5/index.html`、`motion-v6/index.html`（HTML + GSAP，配乐是写在页内的 ABC 乐谱），方向、节奏单与上屏文字出处见各自的 `treatment.md`；三个方向的关键帧与方向卡在 `motion-v5/directions/`。下面的命令把 `motion-v5` 换成 `motion-v6` 即可用于 v6。依赖 Node 22+、Chrome、ffmpeg + ffprobe；真乐器音色第一次需要运行 `om samples build`（约 50MB，CC0/CC-BY）。
+
+```bash
+OM=../.claude/skills/huashu-motion/bin/om
+$OM studio motion-v5 --no-open   # 浏览器里预览，可在画面上点选、改文案变量
+$OM check motion-v5              # 版式与运动规则检查
+$OM render motion-v5 --blur      # 配乐与音效自动重新生成 → motion-v5/out/motion-v5-vN.mp4
+$OM qa motion-v5                 # 检查成片
+```
+
+字幕、停顿句、落版一句话都是合成页变量（studio 右侧可直接改）；改了中文后运行 `motion-v5/tools/subset-fonts.sh` 重新生成仓耳渔阳体子集。
 
 ## 制作 v4
 

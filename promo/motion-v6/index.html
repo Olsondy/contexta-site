@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="zh-CN" data-composition-variables='[
+  {"id":"claim","type":"string","label":"手写结论","default":"意思，在句子里。","group":"文案"},
+  {"id":"note","type":"string","label":"词卡批注","default":"背过的意思","group":"文案"},
+  {"id":"tagline","type":"string","label":"落版一句话","default":"把单词放回语境里练。","group":"文案"},
+  {"id":"showWordmark","type":"boolean","label":"落版显示 Contexta 字标","default":false,"group":"文案"}
+]'>
+<head>
+<meta charset="utf-8">
+<title>v6 · 书桌拼贴</title>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/om.js"></script>
+<style id="om-fonts">
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-900-normal.woff2") format("woff2"); font-weight: 900; }
+@font-face { font-family: "Baskerville"; src: url("assets/fonts/librebaskerville-LibreBaskerville.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "WenKai"; src: url("assets/fonts/LXGWWenKai-500.woff") format("woff"); }
+@font-face { font-family: "Caveat"; src: url("assets/fonts/caveat-Caveat.ttf") format("truetype"); }
+@font-face { font-family: "Jaldi"; src: url("assets/fonts/jaldi-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Tsanger YuYang"; src: url("assets/fonts/tsanger-yuyang-400.subset.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Tsanger YuYang"; src: url("assets/fonts/tsanger-yuyang-700.subset.woff2") format("woff2"); font-weight: 700; }
+</style>
+<style>
+  /* 色值：contexta-site/assets/site.css（小程序 tokens.css）。桌面 = 浅色 canvas-outside，纸 = surface，手机屏幕 = 深色主题 */
+  :root { --desk: #dfe3de; --paper: #fbfcfa; --ink: #2d302d; --graphite: #4a4f4a; --pen: #584e78; --hl: #9a90ba;
+          --canvas: #252825; --surface: #2e312e; --surface-muted: #363a36; --surface-strong: #404540; --sink: #f3f4ef; --sink2: #c7cbc4; --sink3: #a5aca3;
+          --line-strong: #687068; --accent: #9a90ba; --accent-strong: #b8b0d4; --accent-soft: #403859; --positive: #7bc7a4; --highlight: rgba(154,144,186,.42); }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  p { margin: 0; }
+  #film { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--desk); -webkit-font-smoothing: antialiased; }
+  #hand { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  #world { position: absolute; left: 0; top: 0; width: 3400px; height: 2100px; background: var(--desk); }
+  /* 桌面的细微纹理：两层很淡的纸纤维 */
+  #world::before { content: ""; position: absolute; inset: 0; background: radial-gradient(1200px 700px at 1300px 700px, rgba(255,255,255,.28), transparent 70%), radial-gradient(900px 900px at 2700px 900px, rgba(255,255,255,.18), transparent 70%); }
+  .abs { position: absolute; left: 0; top: 0; }
+
+  .paper { position: absolute; background: var(--paper); box-shadow: 0 1px 1px rgba(37,40,37,.10), 0 10px 22px -6px rgba(37,40,37,.22), 0 34px 60px -24px rgba(37,40,37,.30); }
+  .paper::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.5), transparent 40%, rgba(37,40,37,.035)); pointer-events: none; }
+  svg.ink { position: absolute; overflow: visible; pointer-events: none; }
+  .hand { position: absolute; white-space: nowrap; }
+
+  /* 词卡 */
+  #card { left: 350px; top: 330px; width: 760px; height: 480px; background-image: repeating-linear-gradient(180deg, transparent 0 63px, #d5dad5 63px 65px); background-position: 0 92px; background-color: var(--paper); }
+  #card .ph { position: absolute; left: 70px; top: 46px; font: 500 30px/1 "Satoshi"; color: #646a63; }
+  #card .w { position: absolute; left: 64px; top: 128px; font: 900 168px/1 "Satoshi"; letter-spacing: -.03em; color: #252825; }
+  #card .sense { position: absolute; left: 70px; top: 352px; font: 400 52px/1 "Tsanger YuYang"; color: #252825; }
+  #card .sense b { font: 500 34px/1 "Satoshi"; color: var(--pen); margin-right: 14px; }
+  #note { left: 430px; top: 352px; font: 500 34px/1.2 "WenKai"; color: var(--graphite); }
+  #cstamp { position: absolute; left: 470px; top: 92px; width: 250px; height: 250px; mix-blend-mode: multiply; }
+
+  /* 句子纸条（小程序题目原句；练习卡片，不是刊物剪报） */
+  .slip { width: 1340px; height: 176px; }
+  .slip .no { position: absolute; left: 46px; top: 20px; font: 500 17px/1 "Satoshi"; letter-spacing: .16em; color: #8b918a; }
+  .slip .no span { font-family: "Tsanger YuYang"; letter-spacing: .1em; }
+  .slip .tw { position: absolute; left: 46px; top: 96px; font: 400 42px/1 "Baskerville"; color: var(--ink); white-space: nowrap; z-index: 1; }
+  .hl, .clue { position: relative; display: inline-block; }
+  .hl > svg { position: absolute; left: -10px; top: 2px; width: calc(100% + 20px); height: 38px; z-index: -1; mix-blend-mode: multiply; transform-origin: 0 50%; }
+  .clue > svg { position: absolute; left: -26px; top: -26px; width: calc(100% + 52px); height: 96px; overflow: visible; }
+  .gl { position: absolute; left: -4px; bottom: 100%; margin-bottom: 4px; font: 400 46px/1 "Caveat"; color: var(--pen); white-space: nowrap; }
+  .gl span { font: 500 30px/1 "WenKai"; margin-left: 12px; }
+  #s1 { left: 960px; top: 790px; } #s2 { left: 900px; top: 985px; } #s3 { left: 1000px; top: 1180px; }
+
+  #claim { left: 1290px; top: 380px; font: 500 82px/1.25 "WenKai"; color: #252825; }
+
+  /* 书桌上的手机（屏幕为小程序深色主题，内容同 contexta-client fixture） */
+  #phone { left: 2380px; top: 270px; width: 540px; height: 1100px; padding: 14px; box-sizing: border-box; border-radius: 80px; background: #121412; box-shadow: 0 0 0 2px #3d413d, 0 2px 2px rgba(37,40,37,.2), 0 30px 50px -10px rgba(37,40,37,.35), 0 70px 110px -40px rgba(37,40,37,.45); }
+  #phone::after { content: ""; position: absolute; inset: 14px; border-radius: 66px; background: linear-gradient(125deg, rgba(255,255,255,.10), transparent 32%); pointer-events: none; z-index: 50; }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 66px; background: var(--canvas); overflow: hidden; }
+  .island { position: absolute; left: 50%; top: 18px; width: 136px; height: 40px; margin-left: -68px; border-radius: 22px; background: #121412; z-index: 30; }
+  .view { position: absolute; inset: 0; padding: 78px 28px 0; box-sizing: border-box; }
+  .nav { position: relative; height: 48px; display: flex; align-items: center; justify-content: center; font: 700 24px/1 "Satoshi"; color: var(--sink); }
+  .nav svg { position: absolute; left: 2px; width: 28px; height: 28px; fill: none; stroke: var(--sink2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  #qwrap { position: relative; }
+  #status { display: flex; align-items: center; gap: 12px; margin-top: 14px; height: 28px; font: 400 18px/1 "Tsanger YuYang"; color: var(--sink3); white-space: nowrap; }
+  #status .num { display: inline-block; overflow: hidden; height: 22px; vertical-align: -4px; font-family: "Satoshi"; font-variant-numeric: tabular-nums; }
+  #status .col > span { display: block; height: 22px; line-height: 22px; }
+  #status .bar { flex: 1; height: 5px; border-radius: 3px; background: var(--surface-strong); overflow: hidden; }
+  #status .bar i { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; }
+  .passage { margin-top: 16px; padding: 20px 20px 22px; border-radius: 24px; background: var(--surface); }
+  .passage .meta { font: 400 16px/1 "Tsanger YuYang"; color: var(--sink3); }
+  .passage .text { margin-top: 14px; font: 500 22px/1.6 "Satoshi"; color: var(--sink2); }
+  mark { color: var(--accent-strong); font-weight: 900; background: linear-gradient(180deg, transparent 72%, var(--highlight) 72%); padding: 0 2px 1px; border-radius: 2px; }
+  .qtitle { margin-top: 22px; font: 700 22px/1.45 "Satoshi"; color: var(--sink); }
+  .choices { margin-top: 18px; display: grid; gap: 12px; }
+  .choice { position: relative; display: flex; align-items: center; gap: 16px; height: 64px; padding: 0 18px; box-sizing: border-box; border-radius: 18px; background: var(--surface); }
+  .choice .mkr { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 700 16px/1 "Satoshi"; color: var(--sink3); border: 1.5px solid var(--line-strong); box-sizing: border-box; flex: none; }
+  .choice .lb { font: 700 22px/1 "Satoshi"; color: var(--sink); }
+  .choice .ok { position: absolute; inset: 0; border-radius: 18px; border: 2px solid var(--positive); }
+  .choice .ok svg { position: absolute; right: 18px; top: 50%; width: 28px; height: 28px; margin-top: -14px; fill: none; stroke: var(--positive); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .xview { background: var(--canvas); }
+  .xview h3 { margin: 6px 0 0; font: 700 30px/1 "Tsanger YuYang"; color: var(--sink); }
+  .xsec { margin-top: 26px; }
+  .ttl { font: 700 18px/1 "Tsanger YuYang"; color: var(--accent-strong); letter-spacing: .04em; }
+  .copy { margin-top: 12px; font: 400 20px/1.7 "Tsanger YuYang"; color: var(--sink2); }
+  .copy .hlt { color: var(--sink); background: linear-gradient(var(--highlight), var(--highlight)) 0 85% / var(--hlw, 0%) 38% no-repeat; }
+  .cmp { margin-top: 22px; padding: 20px; border-radius: 20px; background: var(--accent-soft); }
+  .cmp .row { margin-top: 14px; font: 400 19px/1.65 "Tsanger YuYang"; color: var(--sink2); }
+  .cmp .row b { display: block; font: 700 18px/1.4 "Tsanger YuYang"; color: var(--sink); }
+  .tap { position: absolute; left: 0; top: 0; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; background: rgba(243,244,239,.3); z-index: 40; }
+
+  /* 落版卡片 */
+  #endc { left: 900px; top: 470px; width: 820px; height: 520px; }
+  #mark { position: absolute; left: 315px; top: 70px; width: 190px; height: 190px; overflow: visible; }
+  #tagline { position: absolute; left: 0; right: 0; width: max-content; margin: 0 auto; top: 330px; font: 700 60px/1.2 "Tsanger YuYang"; color: #252825; letter-spacing: .06em; }
+  #wordmark { position: absolute; left: 0; right: 0; top: 428px; text-align: center; font: 700 40px/1 "Jaldi"; letter-spacing: .04em; color: #252825; }
+
+  /* 画面层：窗光与暗角固定在镜头上，颗粒在最上面 */
+  #light { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(1500px 1000px at 22% 8%, rgba(255,255,255,.45), transparent 60%), radial-gradient(140% 120% at 60% 60%, transparent 50%, rgba(37,40,37,.22)); }
+  #grain { position: absolute; inset: 0; mix-blend-mode: multiply; opacity: .2; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="film" data-composition-id="film" data-width="1920" data-height="1080" data-fps="30">
+  <audio id="om-sound" src="assets/sound.wav" data-start="0" data-duration="30" data-track-index="8" data-volume="1"></audio>
+  <div id="hand">
+  <div id="world">
+    <p class="hand" id="claim" data-om-id="claim" data-var-text="claim">意思，在句子里。</p>
+    <svg class="ink" id="claim-line" style="left:1280px; top:500px" width="430" height="40" viewBox="0 0 430 40"><path d="M6 26 C120 14 260 30 422 12" fill="none" stroke="#584e78" stroke-width="6" stroke-linecap="round" opacity=".78"/></svg>
+
+    <div class="paper" id="card" data-om-id="word-card">
+      <span class="ph">[praɪz]</span>
+      <span class="w">prize</span>
+      <span class="sense"><b>n.</b>奖项；奖品</span>
+      <svg class="ink" id="strike" style="left:60px; top:368px" width="330" height="30" viewBox="0 0 330 30"><path d="M4 18 C60 10 120 20 180 13 S280 9 326 15" fill="none" stroke="#3a3e3a" stroke-width="5" stroke-linecap="round"/><path d="M14 22 C90 15 170 22 250 16 S300 14 318 19" fill="none" stroke="#3a3e3a" stroke-width="3" stroke-linecap="round" opacity=".6"/></svg>
+      <span class="hand" id="note" data-om-id="note" data-var-text="note">背过的意思</span>
+      <img id="cstamp" src="assets/completion-stamp.webp" alt="" data-om-id="stamp">
+    </div>
+
+    <div class="paper slip" id="s1" data-om-id="context-1"><span class="no"><span>语境</span> 01</span>
+      <span class="tw">The committee decided to <span class="hl"><svg viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M3 9 C30 5 70 7 97 6 C99 18 99 28 96 36 C70 38 30 37 4 37 C1 27 1 17 3 9Z" fill="#9a90ba" opacity=".7"/></svg>prize<span class="hand gl">value<span>重视</span></span></span> <span class="clue">accuracy over speed<svg viewBox="0 0 370 96" preserveAspectRatio="none"><path d="M30 14 C130 -4 330 2 360 40 C378 70 250 92 140 88 C40 84 -6 62 12 36 C22 22 60 12 100 10" fill="none" stroke="#584e78" stroke-width="3.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></span> …</span></div>
+    <div class="paper slip" id="s2" data-om-id="context-2"><span class="no"><span>语境</span> 02</span>
+      <span class="tw">Local farmers continue to <span class="hl"><svg viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M2 8 C30 6 70 4 98 8 C99 18 100 28 97 35 C70 37 30 38 3 36 C1 26 0 16 2 8Z" fill="#9a90ba" opacity=".7"/></svg>prize<span class="hand gl">treasure<span>珍视</span></span></span> the traditional seed varieties …</span></div>
+    <div class="paper slip" id="s3" data-om-id="context-3"><span class="no"><span>语境</span> 03</span>
+      <span class="tw">… researchers still consider them highly <span class="hl"><svg viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M3 10 C30 6 70 6 97 9 C99 19 99 29 96 35 C70 38 30 36 4 36 C1 27 1 18 3 10Z" fill="#9a90ba" opacity=".7"/></svg>prized<span class="hand gl">valued<span>珍贵的</span></span></span> records …</span></div>
+
+    <div class="abs" id="phone" data-om-id="phone" data-layout-allow-overlap>
+      <div class="screen" id="screen">
+        <div class="island"></div>
+        <div class="view" id="qview">
+          <div class="nav"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>prize</div>
+          <div id="qwrap">
+            <div id="status" data-om-id="progress"><span>当前词题组 · <span class="num"><span class="col"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></span></span> / 5</span><span class="bar"><i id="bar"></i></span></div>
+            <div class="passage" id="passage" data-om-id="passage">
+              <p class="meta">托福语境练习 · 非官方内容</p>
+              <p class="text">The committee decided to <mark id="q-mark">prize</mark> accuracy over speed in the final review, because a single overlooked error could undermine the whole report.</p>
+            </div>
+            <p class="qtitle">The word “prize” in the passage is closest in meaning to:</p>
+            <div class="choices" data-om-id="choices">
+              <div class="choice" id="cA"><span class="mkr">A</span><span class="lb">value</span><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+              <div class="choice"><span class="mkr">B</span><span class="lb">ignore</span></div>
+              <div class="choice"><span class="mkr">C</span><span class="lb">delay</span></div>
+              <div class="choice"><span class="mkr">D</span><span class="lb">simplify</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="view xview" id="xview" data-om-id="explanation">
+          <h3>深入解析</h3>
+          <div class="xsec"><p class="ttl">语境核心要点</p><p class="copy">核心线索是 <span class="hlt" id="hlt">accuracy over speed</span>：把准确性置于速度之前，说明 accuracy 被高度重视。</p></div>
+          <div class="cmp" data-om-id="distractor"><p class="ttl">最强迷惑项对比</p>
+            <p class="row"><b>正确项 · value</b>prize 在这里表示把 accuracy 放在优先位置，对应 value。</p>
+            <p class="row"><b>迷惑项 · delay</b>delay 只表示推迟，没有“更重视某项”的语义。</p>
+          </div>
+        </div>
+        <i class="tap" id="tap"></i>
+      </div>
+    </div>
+
+    <div class="paper" id="endc" data-om-id="end-card">
+      <svg id="mark" viewBox="0 0 100 100" data-om-id="logo">
+        <g fill="none" stroke="#1b1e1c" stroke-linecap="round" transform="matrix(1.12 0 0 1.12 -6 -6)"><path id="arc" d="M69 26 A31 31 0 1 1 27 67" stroke-width="4.2"/></g>
+        <g fill="#1b1e1c" transform="matrix(1.12 0 0 1.12 -6 -6)">
+          <circle class="dot" cx="67" cy="34" r="3.4" opacity="0.42"/><circle class="dot" cx="58" cy="43" r="4.5" opacity="0.62"/>
+          <circle class="dot" cx="48" cy="53" r="5.6" opacity="0.82"/><circle class="dot" cx="36" cy="65" r="7.2"/>
+        </g>
+      </svg>
+      <p id="tagline" data-om-id="tagline" data-var-text="tagline">把单词放回语境里练。</p>
+      <p id="wordmark" data-om-id="wordmark">Contexta</p>
+    </div>
+  </div>
+  </div>
+  <div id="light"></div>
+  <svg id="grain" width="1920" height="1080"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="3" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .55 0"/></filter><rect width="1920" height="1080" filter="url(#gn)"/></svg>
+</div>
+
+<!-- 作曲：108 BPM。F 大调钢琴动机 C–F–A–c；13.3 s 手机上桌时升到 G 大调，木琴唱动机；22.2 s 印章重拍；结尾钢琴再说一次动机。 -->
+<script type="text/vnd.abc" id="om-score">
+X:1
+T:Contexta v6 · Study Desk
+M:4/4
+L:1/8
+Q:1/4=108
+K:F
+V:PNO inst=piano role=melody gain=0.9
+!mp! C2 FA c4 | d2 cA F4 | z8 | z8 | z8 | z8 |
+[K:G] z8 | z8 | z8 | z8 | z8 | z8 | !mp! D2 GB d4- |
+[M:2/4] !fermata!d4 |
+V:PCH inst=piano gain=0.7
+!mp! [F,,C,F,]8 | [D,,A,,D,]8 | [B,,,F,,B,,]8 | [C,,G,,C,]8 | [D,,A,,D,]8 | [B,,,F,,B,,]4 [C,,G,,C,]2 z2 |
+[K:G] !mf! [G,,D,G,]3 [G,,D,G,]3 [G,,D,G,]2 | [E,,B,,E,]3 [E,,B,,E,]3 [E,,B,,E,]2 | [C,,G,,C,]3 [C,,G,,C,]3 [C,,G,,C,]2 | [D,,A,,D,]3 [D,,A,,D,]3 [D,,A,,D,]2 |
+!f! [G,,D,G,]8 | [C,,G,,C,]4 [D,,A,,D,]4 | !mp! [G,,D,G,]8 |
+[M:2/4] [G,,D,G,]4 |
+V:HRP inst=harp gain=0.7
+z8 | !mf! D,A,DF A,DFA | B,,F,B,D F,B,DF | C,G,CE G,CEG | !mf! D,A,DF A,DFA | B,,F,B,D C,G,C z |
+[K:G] G,DGB DGBd | E,B,EG B,EGB | C,G,CE G,CEG | D,A,DF A,DFA | !f! G,DGB DGBd | C,G,CE D,A,DF | z8 |
+[M:2/4] z4 |
+V:MAR inst=marimba role=melody gain=0.85
+z8 | z8 | z8 | z8 | z8 | z8 |
+[K:G] !f! D2 GB d4 | e2 dB G4 | c2 BA G4 | A2 Bc d4 | !ff! g8 | e4 f4 | z8 |
+[M:2/4] z4 |
+V:STR inst=strings gain=0.6
+z8 | z8 | !p! [B,DF]8 | [CEG]8 | [DFA]8 | [B,DF]4 [CEG]2 z2 |
+[K:G] !mf! [G,B,D]8 | [E,G,B]8 | [C,E,G]8 | [D,F,A]8 | !f! [G,B,D]8 | [C,E,G]4 [D,F,A]4 | !p! [G,B,D]8 |
+[M:2/4] !fermata![G,B,D]4 |
+V:BAS inst=bass gain=0.8
+z8 | !mp! D,,3 D,,3 D,,2 | B,,,3 B,,,3 B,,,2 | C,,3 C,,3 C,,2 | D,,3 D,,3 D,,2 | B,,,4 C,,2 z2 |
+[K:G] !mf! G,,,3 G,,,3 G,,,2 | E,,3 E,,3 E,,2 | C,,3 C,,3 C,,2 | D,,3 D,,3 D,,2 | !f! G,,,8 | C,,4 D,,4 | !mp! G,,,8 |
+[M:2/4] z4 |
+V:DR inst=drums kit=acoustic gain=0.85
+!mark:hook! !p! C,,2 z2 ^C,,2 z2 |
+!mark:context! !mp! [C,,^F,,]^F,, [^C,,^F,,]^F,, [C,,^F,,]^F,, [^C,,^F,,]^F,, | [C,,^F,,]^F,, [^C,,^F,,]^F,, [C,,^F,,]^F,, [^C,,^F,,]^F,, |
+!mf! [C,,^F,,]^F,, [^C,,^F,,]^F,, [C,,^F,,]^F,, [^C,,^F,,]^F,, | [C,,^F,,]^F,, [^C,,^F,,]^F,, [C,,^F,,][C,,^F,,] [^C,,^F,,]A,, |
+!mark:burst! !f! [^C,C,,]C,, [D,,C,,]^F,, [C,,^F,,]^F,, D,,/D,,/ z |
+!mark:phone! [^C,C,,]^F,, [D,,^F,,]^F,, [C,,^F,,]^F,, [D,,^F,,]^F,, | [C,,^F,,]^F,, [D,,^F,,]^F,, [C,,^F,,][C,,^F,,] [D,,^F,,]^F,, |
+[C,,^F,,]^F,, [D,,^F,,]^F,, [C,,^F,,]^F,, [D,,^F,,]^F,, | !crescendo(! [C,,^F,,]^F,, [D,,^F,,]^F,, D,,D,, D,,/D,,/D,,/D,,/ !crescendo)! |
+!mark:stamp! !hit! !ff! [^C,C,,]^F,, [D,,^F,,]^F,, [C,,^F,,]^F,, [D,,^F,,]^F,, | !mp! [C,,^F,,]^F,, ^C,,^F,, [C,,^F,,]^F,, ^C,,z |
+!mark:end! [^C,C,,] z z2 z4 |
+[M:2/4] z4 |
+</script>
+
+<script>
+(function () {
+  const V = OM.vars();
+  OM.music({ bpm: 108 });
+  const B = (n) => OM.beat(n);
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  if (!V.showWordmark) $('#wordmark').style.display = 'none';
+  const prop = (fn, v0) => { let v = v0; const o = {}; Object.defineProperty(o, 'v', { get: () => v, set: (x) => { v = x; fn(x); } }); fn(v0); return o; };
+
+  function build() {
+    const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
+    // 纸张最终的摆放角度（关键帧 b-0.00s.png 的构图）
+    const ROT = { '#card': -3.2, '#s1': 2.2, '#s2': -1.4, '#s3': 1, '#claim': -2.5, '#phone': 4, '#endc': -1.2, '#note': -4, '#cstamp': -9 };
+    for (const [s, r] of Object.entries(ROT)) gsap.set(s, { rotation: r, transformOrigin: '50% 50%' });
+
+    // ---------- 镜头：先按最终摆放量好每一个机位（入场偏移之后才设） ----------
+    const cam = OM.camera('#world', { width: 1920, height: 1080 });
+    const WIDE = { focus: [1330, 800], zoom: .93 };
+    cam.set({ fit: '#card .w', pad: 40, zoom: 2.25 });
+    cam.to(tl, 0, { fit: '#card .w', zoom: 2.0, duration: B(4), ease: 'none' });
+    // 每张纸条落定时，镜头对准这张纸条（整条入画），停留期间慢慢推近
+    [['#s1', 4, 12], ['#s2', 12, 16], ['#s3', 16, 20]].forEach(([sel, a, b], i) => {
+      const t0 = B(a) - (i ? .2 : 0);
+      cam.to(tl, t0, { fit: sel, pad: 150, duration: .95, ease: i ? 'power3.inOut' : 'expo.inOut' });
+      cam.to(tl, t0 + .97, { fit: sel, pad: i ? 95 : 40, duration: B(b) - .2 - (t0 + .97) + (i === 2 ? .2 : 0), ease: 'none' });
+    });
+    // burst：三个荧光笔大特写，切在八分音符上
+    ['#s1 .hl', '#s2 .hl', '#s3 .hl'].forEach((s, i) => cam.to(tl, B(20 + i * .5), { fit: s, zoom: 2.7 - i * .1, duration: .001 }));
+    cam.to(tl, B(21.5), { ...WIDE, duration: .75, ease: 'expo.out' });
+    cam.to(tl, B(24), { focus: [2180, 820], zoom: 1.0, duration: 1.0, ease: 'power3.inOut' });
+    cam.to(tl, 14.55, { fit: '#qwrap', pad: 90, duration: .9, ease: 'expo.inOut' });
+    cam.to(tl, 15.47, { fit: '#qwrap', pad: 40, duration: 21.6 - 15.47, ease: 'none' });
+    cam.to(tl, 21.62, { fit: '#card', pad: 150, duration: .55, ease: 'expo.inOut' });
+    cam.to(tl, 22.18, { fit: '#card', pad: 90, duration: B(44) - 22.18, ease: 'none' });
+    cam.to(tl, B(44), { ...WIDE, duration: 1.0, ease: 'power3.inOut' });
+    cam.to(tl, B(46) + .1, { fit: '#endc', pad: 210, duration: 1.1, ease: 'expo.out' });
+    cam.to(tl, B(48), { fit: '#endc', pad: 170, duration: 30 - B(48), ease: 'none' });
+
+    // 手机屏幕里的点击位置（屏幕内坐标）
+    const scr = $('#screen'), sr = scr.getBoundingClientRect(), kS = sr.width / scr.offsetWidth;
+    const local = (sel) => { const r = $(sel).getBoundingClientRect(); return [(r.left - sr.left + r.width / 2) / kS, (r.top - sr.top + r.height / 2) / kS]; };
+    const P = { cA: local('#cA') };
+    const xNext = [scr.offsetWidth * .72, scr.offsetHeight - 70];
+
+    // ---------- 工具：手写、画线、纸张落桌 ----------
+    const write = (el, at, dur) => {
+      const node = typeof el === 'string' ? $(el) : el;
+      const p = prop((v) => { node.style.clipPath = `inset(-30% ${100 - v}% -40% -4%)`; }, 0);
+      tl.to(p, { v: 100, duration: dur, ease: 'power1.inOut' }, at);
+      OM.sfx('draw', at + .02, { dur: Math.min(dur, .6), gain: .32, pitch: 1.3 });
+    };
+    const draw = (path, at, dur, sound = true, gain = .5) => {
+      const len = path.getTotalLength();
+      gsap.set(path, { strokeDasharray: len, strokeDashoffset: len, visibility: 'hidden' });
+      tl.set(path, { visibility: 'visible' }, at);
+      tl.to(path, { strokeDashoffset: 0, duration: dur, ease: 'power2.inOut' }, at);
+      if (sound) OM.sfx('draw', at + .02, { dur, gain });
+    };
+    const swipe = (svg, at) => {
+      gsap.set(svg, { scaleX: 0 });
+      tl.to(svg, { scaleX: 1, duration: .32, ease: 'power2.out' }, at);
+      OM.sfx('draw', at + .02, { dur: .3, gain: .55 });
+    };
+    const land = (sel, at, from, settle = .7) => {
+      // 纸从桌外滑进来：抬起时略大，落定的一刻配纸声
+      if (at > 0) { gsap.set(sel, { autoAlpha: 0 }); tl.set(sel, { autoAlpha: 1 }, at); }
+      tl.fromTo(sel, { x: from[0], y: from[1], rotation: `+=${from[2]}`, scale: 1.035 }, { x: 0, y: 0, rotation: ROT[sel], scale: 1, duration: settle, ease: 'power3.out', immediateRender: true }, at);
+      OM.sfx('paper', at + settle * .45, { gain: .6, pan: from[0] > 0 ? .2 : -.2 });
+    };
+
+    // ============ 0–2.2 s · 钩子：词卡滑进来，背过的意思被划掉 ============
+    tl.addLabel('scene:hook', 0);
+    land('#card', 0, [-260, -140, -6], .8);
+    draw($$('#strike path')[0], B(2), .3);
+    draw($$('#strike path')[1], B(2) + .18, .22, false);
+    write('#note', B(3) - .05, .6);
+    gsap.set('#cstamp', { autoAlpha: 0 });
+
+    // ============ 2.2–11.1 s · 三张句子纸条 ============
+    tl.addLabel('scene:context', B(4));
+    const slip = (id, at, from, clue) => {
+      land(id, at, from);
+      const hl = $(`${id} .hl > svg`);
+      swipe(hl, at + B(2));
+      write($(`${id} .gl`), at + B(2) + .45 + (clue ? B(2) : 0), .55);
+      if (clue) draw($(`${id} .clue path`), at + B(4) - .1, .5, true, .4);
+    };
+    slip('#s1', B(4), [900, 260, 7], true);
+    slip('#s2', B(12), [-1100, 120, -6], false);
+    slip('#s3', B(16), [1000, 300, 6], false);
+
+    // ============ 11.1–13.3 s · burst：三个大特写，拉成全景，手写结论 ============
+    tl.addLabel('scene:burst', B(20));
+    [0, 1, 2].forEach((i) => OM.sfx('hit', B(20 + i * .5) + .01, { gain: .42, pitch: 1 + i * .05, pan: (i - 1) * .3 }));
+    OM.sfx('whoosh', B(21.5) + .05, { gain: .4 });
+    write('#claim', B(22), .9);
+    draw($('#claim-line path'), B(22) + .9, .35, true, .4);
+
+    // ============ 13.3–22.2 s · 手机滑上书桌，真实题目 ============
+    tl.addLabel('scene:phone', B(24));
+    land('#phone', B(24) - .05, [900, 120, 10], .75);
+    OM.sfx('thud', B(24) + .3, { gain: .5 });
+    gsap.set(['#xview', '#tap', '#cA .ok'], { autoAlpha: 0 });
+    gsap.set('#bar', { scaleX: .2 });
+    const tap = (x, y, at) => {
+      tl.set('#tap', { x, y }, at);
+      tl.fromTo('#tap', { scale: .4, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: .12, ease: 'power2.out', immediateRender: false }, at);
+      tl.to('#tap', { scale: 1.5, autoAlpha: 0, duration: .35, ease: 'power2.out' }, at + .12);
+      OM.sfx('click', at + .02, { gain: .45 });
+    };
+    // 16.1 选 value → 正确
+    const tA = B(29);
+    tap(P.cA[0], P.cA[1], tA - .12);
+    tl.to('#cA', { scale: .975, duration: .1, ease: 'power2.out' }, tA - .12);
+    tl.to('#cA', { scale: 1, duration: .5, ease: OM.spring(.2) }, tA);
+    tl.to('#cA .ok', { autoAlpha: 1, duration: .15 }, tA);
+    tl.fromTo('#cA .ok svg', { scale: 0 }, { scale: 1, duration: .45, ease: OM.spring(.25), immediateRender: false }, tA + .02);
+    tl.to('#cA .lb', { color: '#7bc7a4', duration: .2 }, tA);
+    tl.to('#cA .mkr', { backgroundColor: '#7bc7a4', borderColor: '#7bc7a4', color: '#252825', duration: .2 }, tA);
+    tl.to('.choice:not(#cA)', { opacity: .42, duration: .3, ease: 'power2.out' }, tA + .03);
+    OM.sfx('ding', tA + .03, { gain: .5, note: 5 });
+    // 17.8 深入解析：最强迷惑项
+    tl.addLabel('scene:compare', B(32));
+    tl.fromTo('#xview', { autoAlpha: 1, xPercent: 100 }, { xPercent: 0, duration: .6, ease: 'expo.out', immediateRender: false }, B(32) - .1);
+    tl.to('#qview', { xPercent: -28, opacity: .3, duration: .6, ease: 'expo.out' }, B(32) - .1);
+    OM.sfx('slide', B(32) - .05, { gain: .4 });
+    const hl = prop((p) => $('#hlt').style.setProperty('--hlw', `${p}%`), 0);
+    tl.to(hl, { v: 100, duration: .45, ease: 'power2.out' }, OM.sfx('draw', B(33) + .1, { dur: .45, gain: .4 }));
+    // 20 s 下一道题 → 2/5…5/5
+    tl.addLabel('scene:progress', B(36));
+    tap(xNext[0], xNext[1], B(36) - .25);
+    tl.to('#xview', { xPercent: 100, duration: .4, ease: 'power3.in' }, B(36) - .12);
+    tl.to('#qview', { xPercent: 0, opacity: 1, duration: .45, ease: 'expo.out' }, B(36));
+    tl.to(['#passage', '.qtitle', '.choices'], { opacity: .25, filter: 'blur(5px)', duration: .3, ease: 'power2.out' }, B(36));
+    const num = $('#status .col');
+    [2, 3, 4, 5].forEach((n, i) => {
+      const at = B(36.5) + i * B(.75);
+      tl.to(num, { y: -22 * (n - 1), duration: .3, ease: 'expo.out' }, at);
+      tl.to('#bar', { scaleX: n / 5, duration: .4, ease: OM.spring(.1) }, at);
+      OM.sfx('pop', at + .03, { gain: .42, note: 3 + i });
+    });
+
+    // ============ 22.2 s · 镜头甩回词卡：学完印章 ============
+    tl.addLabel('scene:stamp', B(40));
+    OM.sfx('whip', 21.72, { gain: .45 });
+    tl.fromTo('#cstamp', { scale: 1.8, rotation: -24, autoAlpha: 0 }, { scale: 1, rotation: -9, autoAlpha: .94, duration: .2, ease: 'power4.in', immediateRender: false }, B(40) - .2);
+    OM.sfx('stamp', B(40), { gain: .8 });
+    tl.fromTo('#card', { y: 0 }, { keyframes: [{ y: 5, duration: .04 }, { y: -2, duration: .06 }, { y: 0, duration: .08 }], immediateRender: false }, B(40));
+
+    // ============ 24.4 s · 纸张收拢，新卡片盖上来，标志用墨水画出 ============
+    tl.addLabel('scene:gather', B(44));
+    const cardC = [350 + 380, 330 + 240];
+    [['#s3', 1000, 1180, 3], ['#s2', 900, 985, -5], ['#s1', 960, 790, 4]].forEach(([s, l, t, r], i) => {
+      const at = B(44) + i * .12;
+      tl.to(s, { x: cardC[0] - (l + 670) + (i - 1) * 24, y: cardC[1] - (t + 88) + (i - 1) * 18, rotation: r, scale: .6, duration: .62, ease: 'power3.inOut' }, at);
+      OM.sfx('paper', at + .45, { gain: .4, pan: (i - 1) * .3 });
+    });
+    tl.to(['#claim', '#claim-line'], { autoAlpha: 0, duration: .4, ease: 'power2.out' }, B(44));
+    tl.addLabel('scene:end', B(48));
+    land('#endc', B(46) - .1, [520, 760, 8], .8);
+    const dots = $$('#mark .dot');
+    dots.forEach((d, i) => {
+      gsap.set(d, { transformOrigin: '50% 50%', scale: 0 });
+      tl.to(d, { scale: 1, duration: .45, ease: OM.spring(.3) }, B(48) + i * .13);
+    });
+    OM.sfx('pop', B(48) + .03, { gain: .4, note: 1 });
+    draw($('#arc'), B(48) + .5, .75, true, .4);
+    write('#tagline', B(49.5), .8);
+    OM.sfx('chime', B(49.5) + .75, { gain: .45 });
+    if (V.showWordmark) tl.fromTo('#wordmark', { autoAlpha: 0 }, { autoAlpha: 1, duration: .7 }, B(51));
+
+    tl.to({}, { duration: Math.max(0, 30 - tl.duration()) }, tl.duration());
+    // 手持感：几道慢正弦叠加的微小漂移（纯时间函数）
+    const hand = $('#hand');
+    OM.clock(tl, (t) => {
+      const x = 7 * Math.sin(t * .63) + 3 * Math.sin(t * 1.71 + 2), y = 5 * Math.sin(t * .81 + 1) + 2.5 * Math.sin(t * 1.93);
+      const r = .18 * Math.sin(t * .47 + .5), k = 1.012 + .006 * Math.sin(t * .38);
+      hand.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${r.toFixed(3)}deg) scale(${k.toFixed(4)})`;
+    }, 30);
+    window.__timelines['film'] = tl;
+  }
+
+  const fonts = ['900 168px Satoshi', '500 30px Satoshi', '700 22px Satoshi', '400 42px Baskerville', '500 34px WenKai', '400 46px Caveat', '400 52px "Tsanger YuYang"', '700 60px "Tsanger YuYang"', '700 40px Jaldi'];
+  const ready = Promise.all(fonts.map((f) => document.fonts.load(f))).then(build);
+  if (OM.ready) OM.ready(ready);
+})();
+</script>
+</body>
+</html>

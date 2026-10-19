@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="zh-CN" data-composition-variables='[
+  {"id":"stopLine","type":"string","label":"停顿句","default":"意思，在句子里。","group":"文案"},
+  {"id":"cap1","type":"string","label":"字幕 1","default":"每个词，一组语境题","group":"文案"},
+  {"id":"cap2","type":"string","label":"字幕 2","default":"作答，马上有反馈","group":"文案"},
+  {"id":"cap3","type":"string","label":"字幕 3","default":"逐项解析，辨清易混项","group":"文案"},
+  {"id":"cap4","type":"string","label":"字幕 4","default":"做完这个词的题组","group":"文案"},
+  {"id":"cap5","type":"string","label":"字幕 5","default":"这个词，完整学完","group":"文案"},
+  {"id":"cap6","type":"string","label":"字幕 6","default":"下一个词，自己选","group":"文案"},
+  {"id":"tagline","type":"string","label":"落版一句话","default":"把单词放回语境里练。","group":"文案"},
+  {"id":"showWordmark","type":"boolean","label":"落版显示 Contexta 字标","default":false,"group":"文案"}
+]'>
+<head>
+<meta charset="utf-8">
+<title>v5 · 荧光笔</title>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/om.js"></script>
+<style id="om-fonts">
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Satoshi"; src: url("assets/fonts/satoshi-latin-900-normal.woff2") format("woff2"); font-weight: 900; }
+@font-face { font-family: "Baskerville Italic"; src: url("assets/fonts/librebaskerville-LibreBaskerville-Italic.ttf") format("truetype"); font-weight: 400; font-style: italic; }
+@font-face { font-family: "Jaldi"; src: url("assets/fonts/jaldi-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Tsanger YuYang"; src: url("assets/fonts/tsanger-yuyang-400.subset.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Tsanger YuYang"; src: url("assets/fonts/tsanger-yuyang-700.subset.woff2") format("woff2"); font-weight: 700; }
+</style>
+<style>
+  /* 色值：contexta-site/assets/site.css（小程序 tokens.css）浅色 + 深色两套 */
+  :root {
+    --paper: #f1f2f0; --paper-ink: #252825; --paper-ink2: #555a55; --paper-ink3: #8b918a; --paper-accent: #584e78;
+    --canvas: #252825; --canvas-out: #1c1f1c; --surface: #2e312e; --surface-muted: #363a36; --surface-strong: #404540;
+    --ink: #f3f4ef; --ink2: #c7cbc4; --ink3: #a5aca3; --line: #4b504b; --line-strong: #687068;
+    --accent: #9a90ba; --accent-strong: #b8b0d4; --accent-soft: #403859;
+    --positive: #7bc7a4; --negative: #e0a095; --favourite: #e5a05c;
+    --highlight: rgba(154, 144, 186, .42);
+    --f-word: "Satoshi", sans-serif; --f-cn: "Tsanger YuYang", "Satoshi", sans-serif; --f-gloss: "Baskerville Italic", serif;
+  }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #film { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); font-family: var(--f-word); -webkit-font-smoothing: antialiased; }
+  .layer { position: absolute; inset: 0; }
+  p { margin: 0; }
+
+  /* 地面的光：纸面左上一点亮，桌面四角压暗 */
+  #ground-dark { background: var(--canvas); }
+  #ground-dark::after { content: ""; position: absolute; inset: 0; background: radial-gradient(1400px 900px at 62% 42%, rgba(255,255,255,.035), transparent 70%), radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.38)); }
+  #light-paper { background: radial-gradient(1500px 900px at 30% 20%, rgba(255,255,255,.75), transparent 65%), radial-gradient(130% 120% at 50% 55%, transparent 55%, rgba(37,40,37,.10)); }
+
+  /* ---------- A：纸面（0–12 s） ---------- */
+  #worldA { width: 1920px; height: 1080px; }
+  .ribbon { position: absolute; left: 0; top: 0; width: 1000px; height: 100px; transform-origin: 0 0; }
+  .ribbon svg { display: block; width: 100%; height: 100%; }
+  #hero { position: absolute; left: 0; top: 0; font: 900 330px/1 var(--f-word); letter-spacing: -.025em; color: var(--paper-ink); white-space: nowrap; }
+  .defs { position: absolute; left: 0; width: 1920px; text-align: center; }
+  #phon { top: 668px; font: 400 44px/1 var(--f-word); color: var(--paper-ink2); letter-spacing: .01em; }
+  #phon span { font: 400 30px/1 var(--f-cn); color: var(--paper-ink3); margin: 0 14px 0 0; vertical-align: 4px; }
+  #sense { top: 742px; }
+  #sense .in { position: relative; display: inline-flex; align-items: baseline; gap: 18px; }
+  #sense .pos { font: 700 44px/1 var(--f-word); color: var(--paper-accent); }
+  #sense .zh { font: 400 60px/1.1 var(--f-cn); color: var(--paper-ink); }
+  #strike { position: absolute; left: -10px; right: -10px; top: 54%; height: 6px; border-radius: 3px; background: var(--paper-ink); transform-origin: 0 50%; }
+  #sense-note { top: 842px; font: 400 30px/1 var(--f-cn); color: var(--paper-ink3); letter-spacing: .08em; }
+
+  #lines { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%); }
+  .line { position: absolute; left: 0; top: 0; white-space: nowrap; font: 500 120px/1 var(--f-word); letter-spacing: -.012em; color: var(--paper-ink2); transform-origin: 0 50%; }
+  .line .t { font-weight: 900; color: var(--paper-accent); letter-spacing: -.025em; }
+  .line .clue { position: relative; }
+  .line .clue i { position: absolute; left: 0; right: 0; bottom: -18px; height: 7px; border-radius: 4px; background: var(--paper-accent); transform-origin: 0 50%; }
+  .gloss { position: absolute; left: 0; top: 590px; width: 1920px; text-align: center; }
+  .gloss .in { display: inline-flex; align-items: baseline; gap: 22px; }
+  .gloss .en { font: italic 400 76px/1.2 var(--f-gloss); color: var(--paper-accent); }
+  .gloss .zh { font: 400 54px/1 var(--f-cn); color: var(--paper-ink2); }
+  .kw-zh { position: absolute; font: 700 38px/1 var(--f-cn); color: var(--paper-accent); white-space: nowrap; transform: translateX(-50%); }
+  #hud { position: absolute; left: 120px; top: 92px; display: flex; align-items: baseline; gap: 16px; font: 500 28px/1 var(--f-word); color: var(--paper-ink3); font-variant-numeric: tabular-nums; }
+  #hud b { font: 400 26px/1 var(--f-cn); letter-spacing: .12em; }
+  #hud .n { display: inline-block; overflow: hidden; height: 30px; line-height: 30px; vertical-align: middle; }
+  #hud .n .col, #cap-no .n .col, #status .num .col { display: block; }
+  #hud .n .col > span { display: block; height: 30px; line-height: 30px; }
+  #kw-title { position: absolute; left: 0; top: 168px; width: 1920px; text-align: center; font: 400 36px/1 var(--f-cn); color: var(--paper-ink2); letter-spacing: .12em; }
+
+  /* ---------- 停顿（12–13 s） ---------- */
+  #stop { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #stop .mask { position: absolute; left: 0; top: 420px; width: 1920px; text-align: center; overflow: hidden; padding-bottom: 20px; }
+  #stop p { font: 700 92px/1.2 var(--f-cn); color: var(--ink); letter-spacing: .06em; }
+  #thin { position: absolute; left: 0; top: 0; width: 1000px; height: 100px; transform-origin: 0 0; background: var(--accent); border-radius: 50px; }
+
+  /* ---------- B：小程序（13–25 s） ---------- */
+  #worldB { width: 1920px; height: 1080px; }
+  .cap { position: absolute; left: 196px; top: 472px; width: 820px; height: 120px; overflow: hidden; }
+  .cap p { position: absolute; left: 0; top: 0; font: 700 76px/1.3 var(--f-cn); color: var(--ink); letter-spacing: .03em; white-space: nowrap; }
+  #cap-no { position: absolute; left: 200px; top: 410px; font: 700 28px/1 var(--f-word); color: var(--accent); letter-spacing: .14em; font-variant-numeric: tabular-nums; }
+  #cap-no .n { display: inline-block; overflow: hidden; height: 30px; line-height: 30px; }
+  #cap-no .n .col > span { display: block; height: 30px; line-height: 30px; }
+  #cap-rule { position: absolute; left: 200px; top: 620px; width: 120px; height: 4px; border-radius: 2px; background: var(--line-strong); transform-origin: 0 50%; }
+
+  .phone { position: absolute; left: 1150px; top: 36px; transform: scale(1.06); transform-origin: 50% 50%; width: 486px; height: 1008px; padding: 13px; box-sizing: border-box; border-radius: 72px; background: #121412; box-shadow: 0 0 0 1.5px #3d413d, 0 60px 120px -30px rgba(0,0,0,.75), 0 0 0 10px rgba(255,255,255,.012); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 60px; background: var(--canvas); overflow: hidden; }
+  .island { position: absolute; left: 50%; top: 16px; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #121412; z-index: 30; }
+  .view { position: absolute; inset: 0; padding: 70px 24px 0; box-sizing: border-box; }
+  .nav { position: relative; height: 44px; display: flex; align-items: center; justify-content: center; font: 700 22px/1 var(--f-word); color: var(--ink); }
+  .nav svg { position: absolute; width: 26px; height: 26px; fill: none; stroke: var(--ink2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .nav .back { left: 2px; }
+  .nav .heart { position: static; margin-left: 10px; width: 22px; height: 22px; stroke: var(--ink3); }
+  #status { display: flex; align-items: center; gap: 12px; margin-top: 12px; height: 26px; font: 400 17px/1 var(--f-cn); color: var(--ink3); white-space: nowrap; }
+  #status .num { font-family: var(--f-word); font-variant-numeric: tabular-nums; display: inline-block; overflow: hidden; height: 20px; vertical-align: -3px; }
+  #status .num .col > span { display: block; height: 20px; line-height: 20px; }
+  #status .bar { flex: 1; height: 5px; border-radius: 3px; background: var(--surface-strong); overflow: hidden; }
+  #status .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transform-origin: 0 50%; }
+  .passage { position: relative; margin-top: 14px; padding: 18px 18px 20px; border-radius: 22px; background: var(--surface); }
+  .passage .meta { display: flex; align-items: center; justify-content: space-between; font: 400 15px/1 var(--f-cn); color: var(--ink3); }
+  .assist { position: relative; overflow: hidden; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-strong); font: 400 15px/1 var(--f-cn); color: var(--ink2); }
+  .assist .on { position: absolute; inset: 0; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
+  .passage .text { margin-top: 14px; font: 400 20px/1.6 var(--f-word); color: var(--ink2); }
+  mark, .mk { color: var(--accent-strong); font-weight: 900; background: linear-gradient(180deg, transparent 72%, var(--highlight) 72%); padding: 0 2px 1px; border-radius: 2px; }
+  .tr { font: 400 17px/1.65 var(--f-cn); color: var(--ink3); }
+  .passage .tr { margin-top: 10px; }
+  .qtitle { margin-top: 20px; font: 500 20px/1.45 var(--f-word); color: var(--ink); }
+  .qblock .tr { margin-top: 4px; }
+  .choices { margin-top: 16px; display: grid; gap: 10px; }
+  .choice { position: relative; display: flex; align-items: center; gap: 14px; height: 58px; padding: 0 16px; box-sizing: border-box; border-radius: 16px; border: 1.5px solid transparent; background: var(--surface); }
+  .choice .mkr { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 15px/1 var(--f-word); color: var(--ink3); border: 1.5px solid var(--line-strong); box-sizing: border-box; flex: none; }
+  .choice .lb { font: 700 20px/1 var(--f-word); color: var(--ink); }
+  .choice .hint { font: 400 15px/1 var(--f-cn); color: var(--ink3); }
+  .choice .ok { position: absolute; inset: -1.5px; border-radius: 16px; border: 1.5px solid var(--positive); }
+  .choice .ok svg { position: absolute; right: 16px; top: 50%; width: 26px; height: 26px; margin-top: -13px; fill: none; stroke: var(--positive); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .dock { position: absolute; left: 0; right: 0; bottom: 0; height: 118px; padding: 16px 24px 0; box-sizing: border-box; display: flex; gap: 12px; background: linear-gradient(180deg, rgba(37,40,37,0), var(--canvas) 26%); z-index: 20; }
+  .btn { position: relative; overflow: hidden; flex: 1; height: 56px; border-radius: 16px; display: grid; place-items: center; font: 700 19px/1 var(--f-cn); }
+  .btn--quiet { background: var(--surface-muted); color: var(--ink); }
+  .btn--main { background: var(--accent); color: var(--canvas); }
+  .btn .alt { position: absolute; inset: 0; display: grid; place-items: center; }
+  .tap { position: absolute; left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: rgba(243,244,239,.28); pointer-events: none; z-index: 40; }
+
+  .xview { background: var(--canvas); }
+  .xview h3 { margin: 6px 0 0; font: 700 28px/1 var(--f-cn); color: var(--ink); }
+  .xsec { margin-top: 22px; }
+  .xsec .ttl { font: 700 17px/1 var(--f-cn); color: var(--accent-strong); letter-spacing: .04em; }
+  .xsec .copy { margin-top: 10px; font: 400 18px/1.7 var(--f-cn); color: var(--ink2); }
+  .xsec .copy .hl { color: var(--ink); background: linear-gradient(var(--highlight), var(--highlight)) 0 85% / var(--hlw, 0%) 38% no-repeat; }
+  .recap { margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: var(--surface); font: 400 16px/1.7 var(--f-cn); color: var(--ink2); }
+  .recap b { color: var(--positive); font-weight: 700; }
+  .oa { margin-top: 10px; display: grid; gap: 8px; }
+  .oa div { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 14px; border-radius: 14px; background: var(--surface); font: 700 18px/1 var(--f-word); color: var(--ink); }
+  .oa .m { color: var(--ink3); font-size: 15px; width: 14px; }
+  .oa .z { font: 400 14px/1 var(--f-cn); color: var(--ink3); }
+  .oa .chip { margin-left: auto; padding: 5px 9px; border-radius: 8px; font: 700 13px/1 var(--f-cn); }
+  .chip--ok { background: rgba(123,199,164,.16); color: var(--positive); }
+  .chip--dz { background: var(--accent-soft); color: var(--accent-strong); }
+  .cmp { margin-top: 14px; padding: 16px 18px; border-radius: 18px; background: var(--accent-soft); }
+  .cmp .ttl { font: 700 17px/1 var(--f-cn); color: var(--accent-strong); }
+  .cmp .row { margin-top: 12px; font: 400 16px/1.65 var(--f-cn); color: var(--ink2); }
+  .cmp .row b { display: block; font: 700 15px/1.4 var(--f-cn); color: var(--ink); }
+
+  .done { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: var(--canvas); z-index: 25; }
+  .done img { width: 210px; height: 210px; }
+  .done .w { margin-top: 10px; font: 900 52px/1 var(--f-word); color: var(--ink); }
+  .done .n { font: 400 19px/1.5 var(--f-cn); color: var(--ink2); }
+
+  .deck { position: absolute; left: 24px; right: 24px; top: 130px; bottom: 140px; z-index: 26; }
+  .card { position: absolute; inset: 0; border-radius: 30px; background: var(--surface); display: flex; align-items: center; justify-content: center; }
+  .card .w { font: 900 58px/1 var(--f-word); color: var(--ink); letter-spacing: -.01em; }
+  .card .tip { position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; font: 400 16px/1 var(--f-cn); color: var(--ink3); }
+  .card svg { position: absolute; top: 26px; right: 26px; width: 28px; height: 28px; fill: none; stroke: var(--ink3); stroke-width: 1.8; }
+  .deckbtn { position: absolute; left: 24px; right: 24px; bottom: 56px; height: 56px; border-radius: 16px; background: var(--accent); color: var(--canvas); display: grid; place-items: center; font: 700 19px/1 var(--f-cn); z-index: 26; }
+
+  /* ---------- 落版（25–30 s） ---------- */
+  #flood { position: absolute; inset: 0; background: var(--accent); }
+  #flood::after { content: ""; position: absolute; inset: 0; background: radial-gradient(1300px 800px at 50% 38%, rgba(255,255,255,.16), transparent 70%), radial-gradient(130% 130% at 50% 50%, transparent 55%, rgba(37,40,37,.22)); }
+  #mark { position: absolute; left: 820px; top: 216px; width: 280px; height: 280px; overflow: visible; }
+  #tag-mask { position: absolute; left: 0; top: 590px; width: 1920px; text-align: center; overflow: hidden; padding-bottom: 16px; }
+  #tag-mask p { font: 700 76px/1.25 var(--f-cn); color: var(--canvas); letter-spacing: .06em; }
+  #wordmark { position: absolute; left: 0; top: 760px; width: 1920px; text-align: center; font: 700 52px/1 "Jaldi", sans-serif; letter-spacing: .04em; color: var(--canvas); }
+</style>
+</head>
+<body>
+<div id="film" data-composition-id="film" data-width="1920" data-height="1080" data-fps="30">
+  <audio id="om-sound" src="assets/sound.wav" data-start="0" data-duration="30" data-track-index="8" data-volume="1"></audio>
+  <div class="layer" id="ground-dark"></div>
+  <div class="layer" id="paper" style="background: var(--paper)"><div class="layer" id="light-paper"></div></div>
+
+  <!-- A：纸面 -->
+  <div class="layer" id="sceneA">
+    <div id="worldA">
+      <div class="ribbon" id="ribbon" data-om-id="ribbon" data-layout-allow-overlap>
+        <svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path fill="#9a90ba" fill-opacity=".62" d="M14 18 C120 9 300 12 520 8 C720 5 880 9 990 15 C996 38 998 62 992 86 C860 93 700 90 500 94 C300 97 140 92 10 88 C3 64 4 40 14 18 Z"/></svg>
+      </div>
+      <div id="hero" data-om-id="hero" data-layout-allow-overlap>prize</div>
+      <p class="defs" id="phon" data-om-id="phonetic"><span>英</span>[praɪz]　<span>美</span>[praɪz]</p>
+      <p class="defs" id="sense" data-om-id="sense"><span class="in"><span class="pos">n.</span><span class="zh">奖项；奖品</span><i id="strike"></i></span></p>
+      <p class="defs" id="sense-note" data-om-id="sense-note">词表上背过的意思</p>
+
+      <div id="lines" data-layout-allow-overflow data-layout-allow-overlap>
+        <p class="line" id="l1" data-om-id="context-1">The committee decided to <span class="t">prize</span> <span class="clue">accuracy over speed<i></i></span> …</p>
+        <p class="line" id="l2" data-om-id="context-2">Local farmers continue to <span class="t">prize</span> the traditional seed varieties …</p>
+        <p class="line" id="l3" data-om-id="context-3">… researchers still consider them highly <span class="t">prized</span> records of the region’s early plant life.</p>
+      </div>
+      <p class="gloss" id="g1" data-om-id="gloss-1"><span class="in"><span class="en">value</span><span class="zh">重视</span></span></p>
+      <p class="gloss" id="g2" data-om-id="gloss-2"><span class="in"><span class="en">treasure</span><span class="zh">珍视</span></span></p>
+      <p class="gloss" id="g3" data-om-id="gloss-3"><span class="in"><span class="en">valued</span><span class="zh">珍贵的</span></span></p>
+      <span class="kw-zh" id="k1" data-om-id="kwic-1">重视</span>
+      <span class="kw-zh" id="k2" data-om-id="kwic-2">珍视</span>
+      <span class="kw-zh" id="k3" data-om-id="kwic-3">珍贵的</span>
+      <p id="kw-title" data-om-id="kwic-title">同一个词 · 三个句子 · 三种意思</p>
+    </div>
+    <div id="hud" data-om-id="hud"><b>语境</b><span><span class="n"><span class="col"><span>01</span><span>02</span><span>03</span></span></span> / 03</span></div>
+  </div>
+
+  <!-- 停顿 -->
+  <div id="stop">
+    <div class="mask"><p data-om-id="stop-line" data-var-text="stopLine">意思，在句子里。</p></div>
+    <div id="thin" data-om-id="thin-line"></div>
+  </div>
+
+  <!-- B：小程序 -->
+  <div class="layer" id="sceneB">
+    <div id="worldB">
+      <div id="cap-no" data-om-id="caption-number"><span class="n"><span class="col"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span></span></span></div>
+      <div class="cap" data-om-id="caption">
+        <p data-var-text="cap1">每个词，一组语境题</p><p data-var-text="cap2">作答，马上有反馈</p><p data-var-text="cap3">逐项解析，辨清易混项</p>
+        <p data-var-text="cap4">做完这个词的题组</p><p data-var-text="cap5">这个词，完整学完</p><p data-var-text="cap6">下一个词，自己选</p>
+      </div>
+      <i id="cap-rule"></i>
+
+      <div class="phone" data-om-id="phone">
+        <div class="screen" id="screen">
+          <div class="island"></div>
+
+          <div class="view" id="qview" data-om-id="question">
+            <div class="nav">
+              <svg class="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+              prize<svg class="heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg>
+            </div>
+            <div id="status" data-om-id="progress"><span>当前词题组 · <span class="num"><span class="col"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></span></span> / 5</span><span class="bar"><i id="bar"></i></span></div>
+            <div class="passage" id="passage" data-om-id="passage">
+              <div class="meta"><span>托福语境练习 · 非官方内容</span><span class="assist" id="assist">中文辅助<span class="on">隐藏中文</span></span></div>
+              <p class="text">The committee decided to <mark id="q-mark">prize</mark> accuracy over speed in the final review, because a single overlooked error could undermine the whole report.</p>
+              <p class="tr" id="tr1">委员会决定在最终审核中把准确性放在速度之上，因为一个被忽视的错误可能影响整份报告。</p>
+            </div>
+            <div class="qblock" id="qblock">
+              <p class="qtitle">The word “prize” in the passage is closest in meaning to:</p>
+              <p class="tr" id="tr2">文中单词“prize”的含义最接近：</p>
+              <div class="choices" id="choices" data-om-id="choices">
+                <div class="choice" id="cA"><span class="mkr">A</span><span class="lb">value</span><span class="hint">重视；珍视</span><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>
+                <div class="choice"><span class="mkr">B</span><span class="lb">ignore</span><span class="hint">忽视；不理会</span></div>
+                <div class="choice"><span class="mkr">C</span><span class="lb">delay</span><span class="hint">推迟；拖延</span></div>
+                <div class="choice"><span class="mkr">D</span><span class="lb">simplify</span><span class="hint">简化</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="view xview" id="xview" data-om-id="explanation">
+            <div id="xscroll">
+              <h3>深入解析</h3>
+              <div class="recap">你的选择：A value　<b>正确</b></div>
+              <div class="xsec"><p class="ttl">语境核心要点</p><p class="copy">核心线索是 <span class="hl" id="hl">accuracy over speed</span>：把准确性置于速度之前，说明 accuracy 被高度重视。</p></div>
+              <div class="xsec"><p class="ttl">逐项解析</p>
+                <div class="oa">
+                  <div><span class="m">A</span>value<span class="z">重视；珍视</span><span class="chip chip--ok">正确答案</span></div>
+                  <div><span class="m">B</span>ignore<span class="z">忽视；不理会</span></div>
+                  <div><span class="m">C</span>delay<span class="z">推迟；拖延</span><span class="chip chip--dz">最强迷惑项</span></div>
+                  <div><span class="m">D</span>simplify<span class="z">简化</span></div>
+                </div>
+              </div>
+              <div class="cmp" id="cmp" data-om-id="distractor"><p class="ttl">最强迷惑项对比</p>
+                <p class="row"><b>正确项 · value</b>prize 在这里表示把 accuracy 放在优先位置，对应 value。</p>
+                <p class="row"><b>迷惑项 · delay</b>delay 只表示推迟，没有“更重视某项”的语义。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dock" id="dock" data-om-id="dock">
+            <div class="btn btn--quiet" id="b2"><span class="t0">查看答案</span><span class="alt a1">深入解析</span><span class="alt a2">返回本题</span></div>
+            <div class="btn btn--main" id="b1">下一道题</div>
+          </div>
+
+          <div class="done" id="done" data-om-id="done">
+            <img id="stamp" src="assets/completion-stamp.webp" alt="">
+            <p class="w">prize</p>
+            <p class="n">题组完成 · 已计入学完</p>
+          </div>
+
+          <div class="deck" id="deck" data-om-id="word-cards">
+            <div class="card" id="card2"><span class="w">congratulation</span><span class="tip">「 轻触查看语境 · 上滑跳过 」</span><svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg></div>
+            <div class="card" id="card1"><span class="w">construction</span><span class="tip">「 轻触查看语境 · 上滑跳过 」</span><svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg></div>
+          </div>
+          <div class="deckbtn" id="deckbtn">开始学习 · 5 道题</div>
+
+          <i class="tap" id="tap"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 落版 -->
+  <div class="layer" id="flood" data-om-id="flood">
+    <svg id="mark" viewBox="0 0 100 100" data-om-id="logo">
+      <g fill="none" stroke="#1b1e1c" stroke-linecap="round" transform="matrix(1.12 0 0 1.12 -6 -6)"><path id="arc" d="M69 26 A31 31 0 1 1 27 67" stroke-width="4.2"/></g>
+      <g fill="#1b1e1c" transform="matrix(1.12 0 0 1.12 -6 -6)">
+        <circle class="dot" cx="67" cy="34" r="3.4" opacity="0.42"/><circle class="dot" cx="58" cy="43" r="4.5" opacity="0.62"/>
+        <circle class="dot" cx="48" cy="53" r="5.6" opacity="0.82"/><circle class="dot" cx="36" cy="65" r="7.2"/>
+      </g>
+    </svg>
+    <div id="tag-mask"><p data-om-id="tagline" data-var-text="tagline">把单词放回语境里练。</p></div>
+    <p id="wordmark" data-om-id="wordmark">Contexta</p>
+  </div>
+  <!-- 静态颗粒：打散渐变在 8 位编码下的色带 -->
+  <svg class="layer" id="grain" width="1920" height="1080" style="pointer-events:none;mix-blend-mode:overlay;opacity:.16"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="1920" height="1080" filter="url(#gn)"/></svg>
+</div>
+
+<!-- 作曲：120 BPM。D 大调动机 d–A–B–F♯；13 s 升全音到 E 大调全编制；结尾钢琴再说一次动机。!mark! 对齐 scene:* 标签。 -->
+<script type="text/vnd.abc" id="om-score">
+X:1
+T:Contexta v5 · Highlighter
+M:4/4
+L:1/8
+Q:1/4=120
+K:D
+V:PNO inst=piano role=melody gain=0.9
+!mf! d2 AB f4 | f2 ed B4 |
+z8 | z8 | z8 | z8 |
+[M:2/4] z4 |
+[M:4/4] [K:E] z8 | z8 | z8 | z8 | z8 | z8 |
+!mp! e2 Bc g4- | !fermata!g8 |
+[M:2/4] z4 |
+V:PCH inst=piano gain=0.75
+!mp! [D,A,D]8 | [B,,F,B,]8 |
+[G,B,D]2 z6 | [A,CE]2 z6 | [B,DF]2 z6 | !f! [G,B,D]2 z2 [B,^DF]2 z2 |
+[M:2/4] z4 |
+[M:4/4] [K:E] !ff! [E,G,B,E]3 [E,G,B,E]3 [E,G,B,E]2 | [C,E,G,C]3 [C,E,G,C]3 [C,E,G,C]2 | [A,,C,E,A,]3 [A,,C,E,A,]3 [A,,C,E,A,]2 | [B,,D,F,B,]3 [B,,D,F,B,]3 [B,,D,F,B,]2 |
+[E,G,B,E]3 [E,G,B,E]3 [E,G,B,E]2 | !f! [A,,C,E,A,]3 [A,,C,E,A,]1 [B,,D,F,B,]3 [B,,D,F,B,]1 |
+!mp! [E,,B,,E,G,]8 | [E,,B,,E,G,]8 |
+[M:2/4] z4 |
+V:PLK inst=synpluck gain=0.45
+z8 | z8 |
+!mp! G/B/d/B/ G/B/d/B/ G/B/d/B/ G/B/d/B/ | A/c/e/c/ A/c/e/c/ A/c/e/c/ A/c/e/c/ | B/d/f/d/ B/d/f/d/ B/d/f/d/ B/d/f/d/ |
+!f! G/B/d/B/ G/B/d/B/ B/^d/f/^d/ B/^d/f/^d/ |
+[M:2/4] z4 |
+[M:4/4] [K:E] !f! e/g/b/g/ e/g/b/g/ e/g/b/g/ e/g/b/g/ | c/e/g/e/ c/e/g/e/ c/e/g/e/ c/e/g/e/ | A/c/e/c/ A/c/e/c/ A/c/e/c/ A/c/e/c/ | B/d/f/d/ B/d/f/d/ B/d/f/d/ B/d/f/d/ |
+e/g/b/g/ e/g/b/g/ e/g/b/g/ e/g/b/g/ | A/c/e/c/ A/c/e/c/ B/d/f/d/ B/d/f/d/ |
+z8 | z8 |
+[M:2/4] z4 |
+V:PAD inst=warmpad gain=0.35
+!mp! [DFA]8 | [B,DF]8 | [B,DG]8 | [A,CE]8 | [B,DF]8 | [B,DG]4 [B,^DF]4 |
+[M:2/4] z4 |
+[M:4/4] [K:E] [EGB]8 | [CEG]8 | [A,CE]8 | [B,DF]8 | [EGB]8 | [A,CE]4 [B,DF]4 |
+!p! [EGB]8 | [EGB]8 |
+[M:2/4] z4 |
+V:STR inst=strings role=melody gain=0.8
+z8 | z8 | z8 | z8 | z8 | z8 |
+[M:2/4] z4 |
+[M:4/4] [K:E] !f! e2 Bc g4 | g2 fe c4 | c2 BA E4 | F2 GA B4 |
+!ff! e8 | c4 d4 |
+!mp! [EGB]8 | !fermata![EGB]8 |
+[M:2/4] z4 |
+V:BAS inst=bass gain=0.85
+!mf! D,,3 D,,3 D,,2 | B,,,3 B,,,3 B,,,2 |
+G,,,3 G,,,3 G,,,2 | A,,,3 A,,,3 A,,,2 | B,,,3 B,,,3 B,,,2 | G,,,4 B,,,4 |
+[M:2/4] z4 |
+[M:4/4] [K:E] !ff! E,,E,,E,,E,, E,,E,,E,,E,, | C,,C,,C,,C,, C,,C,,C,,C,, | A,,,A,,,A,,,A,,, A,,,A,,,A,,,A,,, | B,,,B,,,B,,,B,,, B,,,B,,,B,,,B,,, |
+E,,E,,E,,E,, E,,E,,E,,E,, | A,,,A,,,A,,,A,,, B,,,B,,,B,,,B,,, |
+!mp! E,,8 | E,,8 |
+[M:2/4] z4 |
+V:DR inst=drums kit=pop gain=0.9
+!mark:hook! !mf! [^C,C,,]^F,, ^F,,^F,, [C,,^F,,]^F,, ^F,,^F,, | [C,,^F,,]^F,, [D,,^F,,]^F,, [C,,^F,,]^F,, [D,,^F,,]^F,, |
+!mark:context! !mp! [C,,^F,,]^F,, ^F,,^F,, [D,,^F,,]^F,, ^F,,[C,,^F,,] | [C,,^F,,]^F,, ^F,,^F,, [D,,^F,,]^F,, ^F,,[C,,^F,,] | [C,,^F,,]^F,, ^F,,^F,, [D,,^F,,]^F,, D,,D,, |
+!mark:concord! !f! [^C,C,,]C,, [D,,C,,]^F,, [C,,^F,,]^F,, [D,,^F,,] D,,/D,,/ |
+[M:2/4] !mark:stop! !rise(! z4 |
+[M:4/4] !rise)! !mark:drop! !hit! !ff! [^C,C,,]^F,, [D,,^F,,]^F,, [C,,^F,,][C,,^F,,] [D,,^F,,]^F,, | [C,,^F,,]^F,, [D,,^F,,]^F,, [C,,^F,,][C,,^F,,] [D,,^F,,]^A,, |
+[C,,^F,,]^F,, [D,,^F,,]^F,, [C,,^F,,][C,,^F,,] [D,,^F,,]^F,, | !crescendo(! D,,D,, D,,D,, D,,/D,,/D,,/D,,/ D,,/D,,/D,,/D,,/ !crescendo)! |
+!mark:done! [^C,C,,]^F,, [D,,^F,,]^F,, [C,,^F,,][C,,^F,,] [D,,^F,,]^F,, | !f! [C,,^F,,]^F,, [D,,^F,,]^F,, [C,,^F,,]^F,, [D,,^F,,] A,,/A,,/ |
+!mark:end! !mf! [^C,C,,] z z2 z4 | z8 |
+[M:2/4] z4 |
+</script>
+
+<script>
+(function () {
+  const V = OM.vars();
+  OM.music({ bpm: 120 });
+  const B = (n) => OM.beat(n);
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  if (!V.showWordmark) $('#wordmark').style.display = 'none';
+
+  // 用 setter 把补间值写进任意样式（clip-path、CSS 变量），seek 时同样生效。
+  const prop = (fn, v0) => { let v = v0; const o = {}; Object.defineProperty(o, 'v', { get: () => v, set: (x) => { v = x; fn(x); } }); fn(v0); return o; };
+
+  function build() {
+    const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.out' } });
+
+    // ============ 0–4 s · 钩子：荧光笔划过 prize ============
+    const hero = $('#hero');
+    const hw = hero.offsetWidth, hh = hero.offsetHeight;
+    const HX = 960 - hw / 2, HY = 470 - hh / 2;
+    gsap.set(hero, { x: HX, y: HY, transformOrigin: '50% 50%' });
+    const F = 330;
+    const rb = { x: HX - .07 * F, y: HY + .5 * hh + .02 * F, w: hw + .14 * F, h: .36 * F };
+    const ribbon = $('#ribbon');
+    gsap.set(ribbon, { x: rb.x, y: rb.y, scaleX: 0.06 * rb.w / 1000, scaleY: rb.h / 100 });
+
+    const cam = OM.camera('#worldA');
+    cam.set({ focus: [rb.x + rb.w * .12, rb.y + rb.h * .2], zoom: 3.3 });
+    tl.addLabel('scene:hook', 0);
+    tl.to(ribbon, { scaleX: rb.w / 1000, duration: 1.0, ease: 'power2.inOut' }, 0);
+    OM.sfx('draw', 0.02, { dur: 0.9, gain: 0.7 });
+    cam.to(tl, 0, { focus: [rb.x + rb.w * .55, rb.y + rb.h * .1], zoom: 2.9, duration: 1.0, ease: 'power1.in' });
+    cam.to(tl, 1.0, { focus: [960, 540], zoom: 1, duration: .75, ease: 'expo.out' });
+    // 读句子时镜头一直很慢地推近；索引行砸入时拉回原位
+    cam.to(tl, 1.75, { focus: [960, 520], zoom: 1.07, duration: 8.25, ease: 'none' });
+    cam.to(tl, B(20), { focus: [960, 540], zoom: 1, duration: .45, ease: 'expo.out' });
+    OM.sfx('whoosh', 0.98, { gain: 0.6 });
+    OM.sfx('thud', 1.12, { gain: 0.55 });
+
+    tl.fromTo('#phon', { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: .6 }, 1.5);
+    tl.fromTo('#sense', { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: .7 }, 2.0);
+    tl.fromTo('#sense-note', { autoAlpha: 0 }, { autoAlpha: 1, duration: .6, ease: 'power2.out' }, 2.5);
+    tl.fromTo(hero, { scale: 1 }, { scale: 1.025, duration: 2.4, ease: 'none' }, 1.3);
+    // 背过的意思被划掉
+    tl.fromTo('#strike', { scaleX: 0 }, { scaleX: 1, duration: .28, ease: 'power3.out' }, OM.sfx('draw', 3.0, { dur: .3, gain: .6 }));
+    tl.to(['#phon', '#sense', '#sense-note'], { autoAlpha: 0, y: 26, duration: .3, ease: 'power2.in', stagger: .03 }, 3.62);
+
+    // ============ 4–10 s · 三个真实句子从荧光笔下滑过 ============
+    const FS = 120, SLOT_Y = 500;
+    const lines = ['#l1', '#l2', '#l3'].map((s) => $(s));
+    const geo = lines.map((el) => {
+      const t = el.querySelector('.t');
+      return { el, t, cx: t.offsetLeft + t.offsetWidth / 2, tw: t.offsetWidth, w: el.offsetWidth, tl: t.offsetLeft };
+    });
+    const rbFor = (g, y = SLOT_Y, s = 1) => ({ x: 960 - (g.tw / 2 + .08 * FS) * s, y: y + (.04 * FS) * s, w: (g.tw + .16 * FS) * s, h: .36 * FS * s });
+    geo.forEach((g) => gsap.set(g.el, { x: 960 - g.cx, y: SLOT_Y - FS / 2, transformOrigin: `${g.cx}px 50%`, autoAlpha: 0 }));
+
+    // 大词缩成句子里的词（缩放后与 l1 的目标词重合，4.0 s 无缝交接）
+    const shrink = FS / F;
+    tl.to(hero, { scale: shrink, y: SLOT_Y - hh / 2, color: '#584e78', duration: .38, ease: 'expo.inOut' }, 3.62);
+    const r1 = rbFor(geo[0]);
+    tl.to(ribbon, { x: r1.x, y: r1.y, scaleX: r1.w / 1000, scaleY: r1.h / 100, duration: .38, ease: 'expo.inOut' }, 3.62);
+    OM.sfx('whoosh', 3.78, { gain: .4 });
+
+    tl.addLabel('scene:context', B(8));
+    tl.set(hero, { autoAlpha: 0 }, B(8));
+    tl.set(geo[0].el, { autoAlpha: 1 }, B(8));
+    // 语境从这个词向两边长出来
+    const L1 = geo[0];
+    const clip = prop((p) => {
+      const l = L1.tl * (1 - p) - 12 * (1 - p), r = (L1.w - L1.tl - L1.tw) * (1 - p) - 12 * (1 - p);
+      L1.el.style.clipPath = `inset(-40px ${Math.max(0, r)}px -40px ${Math.max(0, l)}px)`;
+    }, 0);
+    tl.fromTo(clip, { v: 0 }, { v: 1, duration: .7, ease: 'expo.out', immediateRender: false }, B(8) + .02);
+    OM.sfx('slide', B(8) + .08, { gain: .5 });
+    const hudN = $('#hud .n .col');
+    tl.fromTo('#hud', { autoAlpha: 0, x: -20 }, { autoAlpha: 1, x: 0, duration: .5 }, B(8) + .1);
+    // 线索：accuracy over speed
+    tl.fromTo('#l1 .clue i', { scaleX: 0 }, { scaleX: 1, duration: .35, ease: 'power3.out' }, OM.sfx('draw', 4.62, { dur: .35, gain: .55 }));
+    const glossIn = (sel, at, note) => {
+      tl.fromTo(sel, { autoAlpha: 0, y: 34 }, { autoAlpha: 1, y: 0, duration: .55, ease: 'expo.out' }, at);
+      OM.sfx('pop', at + .05, { gain: .55, note });
+    };
+    glossIn('#g1', 4.95, 1);
+
+    // 第二句：右边甩进来，目标词停进荧光笔
+    const swap = (from, to, gFrom, gTo, at, note) => {
+      tl.to(from.el, { x: `-=${from.w + 1400}`, duration: .34, ease: 'power3.in' }, at - .2);
+      tl.to(gFrom, { autoAlpha: 0, y: -24, duration: .2, ease: 'power2.in' }, at - .22);
+      tl.fromTo(to.el, { x: 960 - to.cx + 2500, autoAlpha: 1 }, { x: 960 - to.cx, duration: .85, ease: 'expo.out', immediateRender: false }, at - .1);
+      OM.sfx('whoosh', at - .05, { gain: .5, pan: .3 });
+      const r = rbFor(to);
+      tl.to(ribbon, { x: r.x, scaleX: r.w / 1000, duration: .5, ease: OM.spring(.12) }, at + .05);
+      tl.to(hudN, { y: -30 * note, duration: .45, ease: 'expo.out' }, at);
+    };
+    swap(geo[0], geo[1], '#g1', null, B(12), 1);
+    glossIn('#g2', 6.55, 2);
+    swap(geo[1], geo[2], '#g2', null, B(16), 2);
+    OM.sfx('tick', 8.12, { gain: .4 });
+    glossIn('#g3', 8.5, 3);
+    tl.to(geo[2].el, { x: `-=${40}`, duration: 1.4, ease: 'none' }, 8.55);
+
+    // ============ 10–12 s · 索引行：三句叠起来，同一个词竖成一列 ============
+    tl.addLabel('scene:concord', B(20));
+    const KS = .8, ROW = [340, 520, 700];
+    tl.to('#g3', { autoAlpha: 0, y: -20, duration: .18, ease: 'power2.in' }, B(20) - .12);
+    tl.to(geo[2].el, { x: 960 - geo[2].cx, y: ROW[2] - FS / 2, scale: KS, duration: .42, ease: 'expo.out' }, B(20));
+    tl.fromTo(geo[0].el, { x: 960 - geo[0].cx, y: ROW[0] - FS / 2, scale: 1.35, autoAlpha: 0 }, { scale: KS, autoAlpha: 1, duration: .34, ease: 'expo.out', immediateRender: false }, B(20));
+    tl.fromTo(geo[1].el, { x: 960 - geo[1].cx, y: ROW[1] - FS / 2, scale: 1.35, autoAlpha: 0 }, { scale: KS, autoAlpha: 1, duration: .34, ease: 'expo.out', immediateRender: false }, B(20.5));
+    OM.sfx('hit', B(20) + .02, { gain: .6, pan: -.2 });
+    OM.sfx('hit', B(20.5) + .02, { gain: .6, pitch: 1.06, pan: .2 });
+    // 荧光笔竖过三行
+    const colW = Math.max(...geo.map((g) => g.tw)) * KS + .2 * FS * KS;
+    tl.to(ribbon, { x: 960 - colW / 2, y: ROW[0] - FS * KS * .62, scaleX: colW / 1000, scaleY: (ROW[2] - ROW[0] + FS * KS * 1.24) / 100, duration: .4, ease: 'expo.out' }, B(21));
+    tl.to(ribbon.querySelector('path'), { attr: { 'fill-opacity': .34 }, duration: .4 }, B(21));
+    OM.sfx('draw', B(21) + .02, { dur: .35, gain: .6 });
+    tl.to(lines.map((l) => l), { color: '#9da39c', duration: .4, ease: 'power2.out' }, B(21));
+    tl.to('#l1 .clue i', { autoAlpha: 0, duration: .3, ease: 'power2.out' }, B(21));
+    ['#k1', '#k2', '#k3'].forEach((s, i) => {
+      gsap.set(s, { left: 960, top: ROW[i] + FS * KS * .5 + 14 });
+      tl.fromTo(s, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: .4, ease: OM.spring(.15) }, B(21.5) + i * B(.5));
+      OM.sfx('pop', B(21.5) + i * B(.5) + .04, { gain: .5, note: 3 + i * 2 });
+    });
+    tl.fromTo('#kw-title', { autoAlpha: 0, y: -16 }, { autoAlpha: 1, y: 0, duration: .5 }, B(22));
+    tl.to(hudN, { y: -60, duration: .45 }, B(20));
+    // 收拢成一道细线
+    tl.to([...lines, '#k1', '#k2', '#k3', '#kw-title', '#hud'], { autoAlpha: 0, scaleY: .2, y: '+=0', duration: .3, ease: 'power3.in' }, B(23.3));
+    const thinW = 420;
+    tl.to(ribbon, { x: 960 - thinW / 2, y: 560, scaleX: thinW / 1000, scaleY: .07, duration: .34, ease: 'expo.inOut' }, B(23.3));
+    OM.sfx('whoosh', B(23.6), { gain: .45 });
+
+    // ============ 12–13 s · 停顿：深色桌面，一句话 ============
+    tl.addLabel('scene:stop', B(24));
+    tl.set(['#paper', '#sceneA'], { autoAlpha: 0 }, B(24));
+    tl.set('#stop', { autoAlpha: 1 }, B(24));
+    gsap.set('#stop', { autoAlpha: 0 });
+    gsap.set('#thin', { x: 960 - thinW / 2, y: 560, scaleX: thinW / 1000, scaleY: .07 });
+    tl.fromTo('#stop p', { yPercent: 140 }, { yPercent: 0, duration: .55, ease: 'expo.out' }, B(24) + .04);
+    tl.fromTo('#thin', { scaleX: thinW / 1000 }, { scaleX: 560 / 1000, x: 960 - 280, duration: .9, ease: 'power2.out' }, B(24));
+
+    // ============ 13 s · 落拍：细线变回题目里 prize 的荧光笔，镜头拉出整台手机 ============
+    tl.addLabel('scene:drop', B(26));
+    gsap.set('#sceneB', { autoAlpha: 0 });
+    tl.set('#stop', { autoAlpha: 0 }, B(26));
+    tl.set('#sceneB', { autoAlpha: 1 }, B(26));
+
+    // 中文辅助关闭时：译文不占位（只用位移，不改布局）
+    const tr1 = $('#tr1'), tr2 = $('#tr2');
+    const h1 = tr1.offsetHeight + 10, h2 = tr2.offsetHeight + 4;
+    const passage = $('#passage');
+    const pclip = prop((p) => { passage.style.clipPath = `inset(0 0 ${(1 - p) * h1}px 0 round 22px)`; }, 0);
+    gsap.set([tr1, tr2], { autoAlpha: 0 });
+    gsap.set('#qblock', { y: -h1 });
+    gsap.set('#choices', { y: -h2 });
+    gsap.set('#cA .ok', { autoAlpha: 0 });
+    gsap.set('.choice .hint', { autoAlpha: 0 });
+    gsap.set('.assist .on', { autoAlpha: 0 });
+    gsap.set('#bar', { scaleX: .2 });
+    gsap.set(['#xview', '#done', '#deck', '#deckbtn', '#tap', '.btn .alt'], { autoAlpha: 0 });
+    gsap.set('.cap p', { yPercent: 110 });
+
+
+    // 先在镜头推近之前量好位置（镜头缩放后 getBoundingClientRect 会被放大）
+    const scr = $('#screen').getBoundingClientRect();
+    const kS = scr.width / $('#screen').offsetWidth;
+    const local = (sel) => { const r = $(sel).getBoundingClientRect(); return [(r.left - scr.left + r.width / 2) / kS, (r.top - scr.top + r.height / 2) / kS]; };
+    const P = { assist: local('#assist'), cA: local('#cA'), b2: local('#b2'), b1: local('#b1'), deckbtn: local('#deckbtn') };
+    P.cA[1] += h1 + h2;   // 中文辅助打开后，选项整体下移
+    const sb = $('#deckbtn').getBoundingClientRect(), fb = $('#film').getBoundingClientRect();
+    const fx = sb.left - fb.left + sb.width / 2, fy = sb.top - fb.top + sb.height / 2;
+    const camB = OM.camera('#worldB');
+    camB.set({ fit: '#q-mark', pad: 0, zoom: 7 });
+    camB.to(tl, B(26), { focus: [960, 540], zoom: 1, duration: .9, ease: 'expo.out' });
+    camB.to(tl, 13.9, { focus: [1080, 540], zoom: 1.05, duration: 5.1, ease: 'none' });
+
+    // 字幕
+    const caps = $$('.cap p');
+    const capNo = $('#cap-no .n .col');
+    const capAt = [13.3, 15.25, 17.2, 19.15, 21.15, 23.1];
+    caps.forEach((c, i) => {
+      tl.to(c, { yPercent: 0, duration: .6, ease: 'expo.out' }, capAt[i]);
+      if (i < caps.length - 1) tl.to(c, { yPercent: -110, duration: .28, ease: 'power2.in' }, capAt[i + 1] - .28);
+      if (i) tl.to(capNo, { y: -30 * i, duration: .45, ease: 'expo.out' }, capAt[i]);
+    });
+    tl.fromTo('#cap-no', { autoAlpha: 0, x: -16 }, { autoAlpha: 1, x: 0, duration: .5 }, 13.3);
+    tl.fromTo('#cap-rule', { scaleX: 0 }, { scaleX: 1, duration: .7, ease: 'expo.out' }, 13.45);
+
+    const tap = (x, y, at) => {
+      tl.set('#tap', { x, y }, at);
+      tl.fromTo('#tap', { scale: .4, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: .12, ease: 'power2.out', immediateRender: false }, at);
+      tl.to('#tap', { scale: 1.5, autoAlpha: 0, duration: .35, ease: 'power2.out' }, at + .12);
+      OM.sfx('click', at + .02, { gain: .45 });
+    };
+
+    // 14.2 打开中文辅助
+    const [ax, ay] = P.assist;
+    tap(ax, ay, 14.15);
+    tl.to('.assist .on', { autoAlpha: 1, duration: .2, ease: 'power2.out' }, 14.25);
+    tl.to(pclip, { v: 1, duration: .55, ease: 'expo.out' }, 14.25);
+    tl.to('#qblock', { y: 0, duration: .55, ease: 'expo.out' }, 14.25);
+    tl.to('#choices', { y: 0, duration: .55, ease: 'expo.out' }, 14.3);
+    tl.to([tr1, tr2], { autoAlpha: 1, duration: .45, ease: 'power2.out', stagger: .05 }, 14.35);
+    tl.to('.choice .hint', { autoAlpha: 1, duration: .4, ease: 'power2.out', stagger: .04 }, 14.45);
+
+    // 15.3 选 A value → 正确
+    tl.addLabel('scene:answer', B(30));
+    const cAxy = P.cA;
+    tl.to('#cA', { scale: .975, duration: .1, ease: 'power2.out' }, 15.3);
+    tap(cAxy[0], cAxy[1] + h2 * 0, 15.3);
+    tl.to('#cA', { scale: 1, duration: .5, ease: OM.spring(.2) }, 15.42);
+    tl.to('#cA .ok', { autoAlpha: 1, duration: .18 }, 15.42);
+    tl.fromTo('#cA .ok svg', { scale: 0 }, { scale: 1, duration: .45, ease: OM.spring(.25), immediateRender: false }, 15.45);
+    tl.to('#cA .lb', { color: '#7bc7a4', duration: .2 }, 15.42);
+    tl.to('#cA .mkr', { backgroundColor: '#7bc7a4', borderColor: '#7bc7a4', color: '#252825', duration: .2 }, 15.42);
+    tl.to('.choice:not(#cA)', { opacity: .42, duration: .3, ease: 'power2.out' }, 15.45);
+    OM.sfx('ding', 15.45, { gain: .55, note: 5 });
+    tl.to('#b2 .t0', { autoAlpha: 0, duration: .15 }, 15.65);
+    tl.fromTo('#b2 .a1', { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .35 }, 15.7);
+
+    // 16.5 深入解析
+    tl.addLabel('scene:analysis', B(34));
+    const [bx, by] = P.b2;
+    tap(bx, by, 16.45);
+    tl.fromTo('#xview', { autoAlpha: 1, xPercent: 100 }, { xPercent: 0, duration: .6, ease: 'expo.out', immediateRender: false }, 16.6);
+    tl.to('#qview', { xPercent: -28, opacity: .3, duration: .6, ease: 'expo.out' }, 16.6);
+    OM.sfx('slide', 16.65, { gain: .45 });
+    tl.to('#b2 .a1', { autoAlpha: 0, duration: .15 }, 16.6);
+    tl.to('#b2 .a2', { autoAlpha: 1, duration: .3 }, 16.7);
+    const hl = prop((p) => $('#hl').style.setProperty('--hlw', `${p}%`), 0);
+    tl.to(hl, { v: 100, duration: .45, ease: 'power2.out' }, OM.sfx('draw', 17.25, { dur: .45, gain: .5 }));
+    // 往下滚到逐项解析与最强迷惑项
+    const cmp = $('#cmp');
+    const scrollY = Math.max(0, cmp.offsetTop + cmp.offsetHeight - (1008 - 26 - 70 - 140));
+    tl.to('#xscroll', { y: -scrollY, duration: .8, ease: 'power3.inOut' }, 17.85);
+    tl.fromTo('#cmp', { autoAlpha: .0, y: 24 }, { autoAlpha: 1, y: 0, duration: .5 }, 18.15);
+
+    // 19 s 下一道题 → 题号 2/5…5/5
+    tl.addLabel('scene:progress', B(38));
+    const [nx, ny] = P.b1;
+    tap(nx, ny, 18.8);
+    tl.to('#xview', { xPercent: 100, duration: .4, ease: 'power3.in' }, 18.95);
+    tl.to('#qview', { xPercent: 0, opacity: 1, duration: .45, ease: 'expo.out' }, 19.0);
+    camB.to(tl, 19.0, { fit: '#status', pad: 30, duration: .55, ease: 'expo.inOut' });
+    tl.to(['#passage', '#qblock'], { opacity: .25, filter: 'blur(5px)', duration: .3, ease: 'power2.out' }, 19.0);
+    const num = $('#status .num .col');
+    [2, 3, 4, 5].forEach((n, i) => {
+      const at = B(39) + i * B(1);
+      tl.to(num, { y: -20 * (n - 1), duration: .3, ease: 'expo.out' }, at);
+      tl.to('#bar', { scaleX: n / 5, duration: .4, ease: OM.spring(.1) }, at);
+      OM.sfx('pop', at + .03, { gain: .45, note: 3 + i });
+    });
+
+    // 21 s 学完：印章
+    tl.addLabel('scene:done', B(42));
+    camB.to(tl, B(41.6), { focus: [960, 540], zoom: 1, duration: .5, ease: 'expo.out' });
+    camB.to(tl, 21.4, { focus: [1100, 540], zoom: 1.045, duration: 3.6, ease: 'none' });
+    tl.set('#done', { autoAlpha: 1 }, B(41.6));
+    tl.fromTo('#done', { opacity: 0 }, { opacity: 1, duration: .2, immediateRender: false }, B(41.6));
+    tl.fromTo('#stamp', { scale: 2.3, rotation: -18, autoAlpha: 0 }, { scale: 1, rotation: -6, autoAlpha: 1, duration: .2, ease: 'power4.in', immediateRender: false }, B(42) - .2);
+    OM.sfx('stamp', B(42), { gain: .8 });
+    tl.fromTo('.phone', { x: 0, y: 0 }, { keyframes: [{ x: 5, y: -4, duration: .04 }, { x: -4, y: 3, duration: .05 }, { x: 2, y: -1, duration: .05 }, { x: 0, y: 0, duration: .06 }], immediateRender: false }, B(42));
+    tl.fromTo(['#done .w', '#done .n'], { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: .5, stagger: .08, immediateRender: false }, B(42) + .15);
+
+    // 23 s 下一个词：词卡，上滑跳过一张
+    tl.addLabel('scene:next', B(46));
+    tl.to('#done', { yPercent: -12, autoAlpha: 0, duration: .3, ease: 'power2.in' }, B(46) - .25);
+    tl.fromTo('#deck', { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: .6, ease: OM.spring(.1), immediateRender: false }, B(46));
+    tl.fromTo('#deckbtn', { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: .5, immediateRender: false }, B(46) + .1);
+    tl.set(['#qview', '#dock'], { autoAlpha: 0 }, B(46));
+    gsap.set('#card2', { scale: .94, y: 18 });
+    OM.sfx('slide', B(46) + .05, { gain: .4 });
+    tl.to('#card1', { y: -760, rotation: -4, duration: .42, ease: 'power3.in' }, 23.7);
+    OM.sfx('whoosh', 23.85, { gain: .45, pan: .1 });
+    tl.to('#card2', { scale: 1, y: 0, duration: .5, ease: OM.spring(.12) }, 23.95);
+    OM.sfx('pop', 24.0, { gain: .4, note: 4 });
+    const [dx, dy] = P.deckbtn;
+    tap(dx, dy, 24.55);
+
+    // ============ 25 s · 落版：薰衣草从按钮扩散成整屏，标志的四个点依次落下 ============
+    tl.addLabel('scene:end', B(50));
+    const flood = $('#flood');
+    const fr = prop((r) => { flood.style.clipPath = `circle(${r}px at ${fx}px ${fy}px)`; }, 0);
+    gsap.set(flood, { autoAlpha: 0 });
+    tl.set(flood, { autoAlpha: 1 }, B(50) - .32);
+    tl.to(fr, { v: 2300, duration: .42, ease: 'power3.in' }, B(50) - .32);
+    OM.sfx('whoosh', B(50) - .1, { gain: .5 });
+    tl.set('#sceneB', { autoAlpha: 0 }, B(50) + .12);
+
+    const dots = $$('#mark .dot');
+    dots.forEach((d, i) => {
+      gsap.set(d, { transformOrigin: '50% 50%', scale: 0 });
+      const at = 25.45 + i * .14;
+      tl.to(d, { scale: 1, duration: .5, ease: OM.spring(.3) }, at);
+      if (i === 0) OM.sfx('sparkle', at + .02, { gain: .45 });
+    });
+    const arc = $('#arc'), len = arc.getTotalLength();
+    gsap.set(arc, { strokeDasharray: len, strokeDashoffset: len });
+    tl.to(arc, { strokeDashoffset: 0, duration: .8, ease: 'power2.inOut' }, OM.sfx('draw', 26.05, { dur: .7, gain: .45 }));
+    tl.fromTo('#mark', { rotation: -24, scale: .92, transformOrigin: '50% 50%' }, { rotation: 0, scale: 1, duration: 1.4, ease: 'expo.out', immediateRender: false }, 25.45);
+    tl.fromTo('#tag-mask p', { yPercent: 140 }, { yPercent: 0, duration: .8, ease: 'expo.out' }, 26.55);
+    OM.sfx('chime', 26.6, { gain: .5 });
+    if (V.showWordmark) tl.fromTo('#wordmark', { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: .7 }, 27.0);
+    tl.fromTo(['#mark', '#tag-mask'], { y: 0 }, { y: -10, duration: 3.4, ease: 'none', immediateRender: false }, 26.6);
+
+    tl.to({}, { duration: 30 - tl.duration() > 0 ? 30 - tl.duration() : 0 }, tl.duration());
+    gsap.set(flood, { clipPath: `circle(0px at ${fx}px ${fy}px)` });
+    window.__timelines['film'] = tl;
+  }
+
+  const fonts = ['900 120px Satoshi', '500 120px Satoshi', '400 20px Satoshi', '700 20px Satoshi', 'italic 400 76px "Baskerville Italic"', '700 76px "Tsanger YuYang"', '400 20px "Tsanger YuYang"', '700 52px Jaldi'];
+  const ready = Promise.all(fonts.map((f) => document.fonts.load(f))).then(build);
+  if (OM.ready) OM.ready(ready);
+})();
+</script>
+</body>
+</html>

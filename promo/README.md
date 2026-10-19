@@ -22,10 +22,10 @@ Contexta 的竖屏宣传短片（1080×1920，30fps）。画面、配乐与音�
 
 ## 制作 v5 / v6（huashu-motion）
 
-v5 和 v6 各是一个 [huashu-motion](https://github.com/alchaincyf/huashu-motion) 工程（技能装在仓库的 `.claude/skills/huashu-motion`，来源锁定在 `skills-lock.json`）：合成页 `motion-v5/index.html`、`motion-v6/index.html`（HTML + GSAP，配乐是写在页内的 ABC 乐谱），方向、节奏单与上屏文字出处见各自的 `treatment.md`；三个方向的关键帧与方向卡在 `motion-v5/directions/`。下面的命令把 `motion-v5` 换成 `motion-v6` 即可用于 v6。依赖 Node 22+、Chrome、ffmpeg + ffprobe；真乐器音色第一次需要运行 `om samples build`（约 50MB，CC0/CC-BY）。
+v5 和 v6 各是一个 [huashu-motion](https://github.com/alchaincyf/huashu-motion) 工程（技能不放在仓库里，装在 `~/.agents/skills/huashu-motion`）：合成页 `motion-v5/index.html`、`motion-v6/index.html`（HTML + GSAP，配乐是写在页内的 ABC 乐谱），方向、节奏单与上屏文字出处见各自的 `treatment.md`；三个方向的关键帧与方向卡在 `motion-v5/directions/`。下面的命令把 `motion-v5` 换成 `motion-v6` 即可用于 v6。依赖 Node 22+、Chrome、ffmpeg + ffprobe；真乐器音色第一次需要运行 `om samples build`（约 50MB，CC0/CC-BY）。
 
 ```bash
-OM=../.claude/skills/huashu-motion/bin/om
+OM=~/.agents/skills/huashu-motion/bin/om
 $OM studio motion-v5 --no-open   # 浏览器里预览，可在画面上点选、改文案变量
 $OM check motion-v5              # 版式与运动规则检查
 $OM render motion-v5 --blur      # 配乐与音效自动重新生成 → motion-v5/out/motion-v5-vN.mp4

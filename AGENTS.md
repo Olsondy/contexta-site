@@ -41,4 +41,4 @@ python3 -m http.server 8000   # 打开 http://localhost:8000
 
 ## 宣传短片
 
-主版本是 `promo/out/contexta-30s-v4-vo.mp4`（30 秒竖屏，中文解说）。各版本说明、制作流程、解说生成和用 DAW 重做配乐的方法见 [promo/README.md](promo/README.md)。huashu-motion 做的 v5/v6 实验未采用，放在分支 `promo/huashu-motion-experiments`。
+主版本是 `promo/out/contexta-30s-v4-vo.mp4`（30 秒竖屏，中文解说）。各版本说明、制作流程、解说生成和用 DAW 重做配乐的方法见 [promo/README.md](promo/README.md)。

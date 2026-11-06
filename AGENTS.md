@@ -23,6 +23,10 @@ python3 -m http.server 8000   # 打开 http://localhost:8000
 
 部署只需上传 `index.html` 和 `assets/` 到任意静态托管；`promo/` 不部署。
 
+正式入口保留 `mycontexta.com/product`，由 Nginx 补齐末尾斜杠到 `/product/`，直接提供本项目静态文件；不要再把页面复制进 `contexta-server` 的 Next.js 路由。首次接入、目录权限、独立上传与回退统一见[产品页独立部署](../contexta-server/docs/architecture/product-site-deployment.md)。页面调整无需 Server 构建或应用重启。
+
+自动部署以 [docs/deployment.md](docs/deployment.md) 为准：`main` 的页面和资源改动先校验，仅在仓库变量 `SITE_DEPLOY_ENABLED=true` 时经 GitHub Actions 上传并切换静态目录。部署配置属于本仓库，不引入 Server 构建；不把密钥写入代码或在流水线中关闭 SSH 主机校验。提交前可运行 `python3 scripts/package-site.py` 检查静态资源。
+
 ## 文案
 
 - 范围以 `PRODUCT.md` 为准：只描述小程序当前已有的能力，不写用户数、证言或效果数据。

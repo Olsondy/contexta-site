@@ -1,0 +1,89 @@
+name: Deploy product site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - assets/**
+      - scripts/package-site.py
+      - scripts/activate-site.py
+      - scripts/deploy-site.sh
+      - scripts/test-deployment.py
+      - .github/workflows/deploy-site.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contexta-product-site
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: python3 scripts/package-site.py
+      - run: PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-deployment.py
+
+  deploy:
+    needs: validate
+    if: vars.SITE_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Package public files
+        run: python3 scripts/package-site.py --output "$RUNNER_TEMP/site.tar.gz"
+      - name: Configure deployment SSH
+        env:
+          SITE_SSH_HOST: ${{ secrets.SITE_SSH_HOST }}
+          SITE_SSH_PORT: ${{ secrets.SITE_SSH_PORT }}
+          SITE_SSH_USER: ${{ secrets.SITE_SSH_USER }}
+          SITE_SSH_PRIVATE_KEY: ${{ secrets.SITE_SSH_PRIVATE_KEY }}
+          SITE_SSH_KNOWN_HOSTS: ${{ secrets.SITE_SSH_KNOWN_HOSTS }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          names = ['SITE_SSH_HOST', 'SITE_SSH_PORT', 'SITE_SSH_USER', 'SITE_SSH_PRIVATE_KEY', 'SITE_SSH_KNOWN_HOSTS']
+          for name in names:
+              if not os.environ.get(name, '').strip():
+                  raise SystemExit(f'Missing deployment secret: {name}')
+          host, port, user = [os.environ[n].strip() for n in names[:3]]
+          if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9.:-]*', host):
+              raise SystemExit('Invalid SSH host')
+          if not port.isdigit() or not 1 <= int(port) <= 65535:
+              raise SystemExit('Invalid SSH port')
+          if not re.fullmatch(r'[a-z_][a-z0-9_-]*', user):
+              raise SystemExit('Invalid SSH user')
+          root = Path(os.environ['RUNNER_TEMP']) / 'site-ssh'
+          root.mkdir(mode=0o700)
+          for name, value in [('key', os.environ['SITE_SSH_PRIVATE_KEY']), ('known_hosts', os.environ['SITE_SSH_KNOWN_HOSTS'])]:
+              path = root / name
+              path.write_text(value.rstrip() + '\n')
+              path.chmod(0o600)
+          (root / 'config').write_text(
+              f'Host site-deploy\n  HostName {host}\n  Port {port}\n  User {user}\n'
+              f'  IdentityFile {root}/key\n  UserKnownHostsFile {root}/known_hosts\n'
+              '  StrictHostKeyChecking yes\n  IdentitiesOnly yes\n  BatchMode yes\n  ConnectTimeout 20\n'
+          )
+          PY
+      - name: Upload and activate
+        env:
+          SITE_SSH_CONFIG: ${{ runner.temp }}/site-ssh/config
+        run: bash scripts/deploy-site.sh "$RUNNER_TEMP/site.tar.gz" "$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+      - name: Remove runner SSH files
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os, shutil
+          from pathlib import Path
+          shutil.rmtree(Path(os.environ['RUNNER_TEMP']) / 'site-ssh', ignore_errors=True)
+          PY

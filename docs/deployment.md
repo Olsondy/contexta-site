@@ -6,16 +6,16 @@
 
 首次同域分流仍需按 [Server 产品页接入说明](../../contexta-server/docs/architecture/product-site-deployment.md)准备 Nginx：`/product` 补齐斜杠，`/product/` 和 `/product/assets/` 从 `/srv/contexta/site/current/` 下读取文件；根首页仍代理 Next.js。后续只更新静态版本，不 reload Nginx。
 
-本仓库 `.github/workflows/deploy-site.yml` 在 `main` 的页面、资源或部署脚本变化时运行，也支持 Actions 页面手动执行。流程先校验资源引用，然后仅在仓库变量 `SITE_DEPLOY_ENABLED=true` 时部署；默认不部署。手动执行也只允许 `main`。部署并发串行，不中途取消正在上传的版本。
+启用本仓库 `.github/workflows/deploy-site.yml` 后，`main` 的页面、资源或部署脚本变化会触发校验和部署，也支持 Actions 页面手动执行。手动执行也只允许 `main`。部署并发串行，不中途取消正在上传的版本。首次接入完成前，使用 GitHub 自带的禁用工作流功能暂停发布，不再配置额外的启用变量。
 
 ## 一次性准备
 
 ### 服务器
 
-目标主机需要 Python 3、OpenSSH/SFTP 和 Nginx。使用专用静态部署用户更方便隔离目录权限，无需为该用户提供 sudo 或应用数据库凭据。运维账号先创建用户、配置专用 SSH 公钥，再创建发布目录；以下使用 `contexta-site` 作为部署账号示例：
+目标主机需要 Python 3、OpenSSH/SFTP 和 Nginx。当前复用 `olsond` 账号，使用 Site 专用密钥；部署公钥已追加到 `/home/olsond/.ssh/authorized_keys`，不复用本机管理员私钥。以运维账号创建发布目录：
 
 ```bash
-sudo install -d -m 755 -o contexta-site -g contexta-site \
+sudo install -d -m 755 -o olsond -g olsond \
   /srv/contexta/site /srv/contexta/site/releases /srv/contexta/site/incoming
 ```
 
@@ -23,29 +23,27 @@ sudo install -d -m 755 -o contexta-site -g contexta-site \
 
 ### GitHub 仓库
 
-在 `Settings → Secrets and variables → Actions` 配置以下 Repository secrets，不把私钥或主机指纹写入源码：
+服务器地址 `117.72.29.124`、SSH 端口 `2610` 和账号 `olsond` 直接写在工作流的 SSH 配置中，更换服务器时修改该文件。在 `Settings → Secrets and variables → Actions` 只保留以下两个 Repository secrets，不把私钥或主机公钥内容写入源码：
 
 | Secret | 内容 |
 | --- | --- |
-| `SITE_SSH_HOST` | 可从 GitHub runner 访问的服务器域名或 IP |
-| `SITE_SSH_PORT` | SSH 端口 |
-| `SITE_SSH_USER` | 静态发布账号，例如 `contexta-site` |
 | `SITE_SSH_PRIVATE_KEY` | 该账号专用部署私钥，对应公钥已安装在服务器 |
 | `SITE_SSH_KNOWN_HOSTS` | 经可信渠道确认的服务器 SSH 主机公钥行；非 22 端口使用 `[主机]:端口` 格式 |
 
 工作流强制校验已知主机，不使用 `StrictHostKeyChecking=no` 或在流水线中临时信任扫描结果。不要直接复用管理员私钥。
 
-先不设置启用变量；完成目录、公钥和 Secrets 后，将 Repository variable `SITE_DEPLOY_ENABLED` 设为字符串 `true`，手动执行一次 `Deploy product site`。首次上传通过后再切换、检查并 reload Nginx，然后验证公网产品页和资源。之后推送到 `main` 即自动发布，无额外人工构建。将该变量改为 `false` 可以暂停后续自动部署，资源校验仍运行。
+部署公钥只需装在服务器，不另存为 Secret。当前两个 Secrets 已配置。完成目录权限后，在 Actions 的 `Deploy product site` 页面启用工作流，再手动运行 `main`。首次上传通过后再切换、检查并 reload Nginx，然后验证公网产品页和资源。之后推送到 `main` 即自动发布，无额外人工构建。需要暂停时使用该页面菜单中的 `Disable workflow`；禁用期间校验与部署都不自动运行，需要本地检查。
 
 GitHub CLI 也可以从本机设置这些值；私钥以文件输入，避免回显：
 
 ```bash
-gh secret set SITE_SSH_PRIVATE_KEY < /path/to/dedicated-key
-gh secret set SITE_SSH_KNOWN_HOSTS < /path/to/verified-known-hosts
-# 其余 Secrets 可在设置页面填写，最后才启用。
-gh variable set SITE_DEPLOY_ENABLED --body true
-gh workflow run deploy-site.yml --ref main
+gh secret set SITE_SSH_PRIVATE_KEY --repo Olsondy/contexta-site < /path/to/dedicated-key
+gh secret set SITE_SSH_KNOWN_HOSTS --repo Olsondy/contexta-site < /path/to/verified-known-hosts
+gh workflow enable deploy-site.yml --repo Olsondy/contexta-site
+gh workflow run deploy-site.yml --ref main --repo Olsondy/contexta-site
 ```
+
+暂停后续触发使用 `gh workflow disable deploy-site.yml --repo Olsondy/contexta-site`。禁用工作流不会取消已经运行的发布，回退前先确认没有部署正在执行。
 
 平台依据：[GitHub Actions 部署与并发控制](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments)。
 
@@ -86,4 +84,6 @@ mv -Tf current.rollback current
 
 ## 验证记录
 
-2026-11-06 本地已通过资源校验、17 个公开文件的打包范围检查、Shell/JavaScript 语法检查、工作流 YAML 与触发条件检查，以及 `PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-deployment.py` 的 7 项部署测试。尚未配置远端部署 Secrets、安装服务器部署公钥、启用发布变量或验证真实 SSH 上传；不能把工作流提交视为自动部署已经接通。
+2026-11-06 首次实现已通过资源校验、17 个公开文件的打包范围检查、Shell/JavaScript 语法检查、工作流 YAML 与触发条件检查，以及 `PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-deployment.py` 的 7 项部署测试。
+
+同日配置简化为两个 Secrets，服务器连接信息改为工作流内固定值。专用部署公钥已安装到 `olsond` 账号并用配对私钥验证 SSH 登录，GitHub 已保存部署私钥和服务器主机公钥。工作流在首次接入前暂时禁用；尚未验证真实 GitHub 上传或切换目标主机 Nginx，不能把登录验证当作发布完成。

@@ -32,7 +32,7 @@ jobs:
 
   deploy:
     needs: validate
-    if: vars.SITE_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -43,26 +43,16 @@ jobs:
         run: python3 scripts/package-site.py --output "$RUNNER_TEMP/site.tar.gz"
       - name: Configure deployment SSH
         env:
-          SITE_SSH_HOST: ${{ secrets.SITE_SSH_HOST }}
-          SITE_SSH_PORT: ${{ secrets.SITE_SSH_PORT }}
-          SITE_SSH_USER: ${{ secrets.SITE_SSH_USER }}
           SITE_SSH_PRIVATE_KEY: ${{ secrets.SITE_SSH_PRIVATE_KEY }}
           SITE_SSH_KNOWN_HOSTS: ${{ secrets.SITE_SSH_KNOWN_HOSTS }}
         run: |
           python3 - <<'PY'
-          import os, re
+          import os
           from pathlib import Path
-          names = ['SITE_SSH_HOST', 'SITE_SSH_PORT', 'SITE_SSH_USER', 'SITE_SSH_PRIVATE_KEY', 'SITE_SSH_KNOWN_HOSTS']
+          names = ['SITE_SSH_PRIVATE_KEY', 'SITE_SSH_KNOWN_HOSTS']
           for name in names:
               if not os.environ.get(name, '').strip():
                   raise SystemExit(f'Missing deployment secret: {name}')
-          host, port, user = [os.environ[n].strip() for n in names[:3]]
-          if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9.:-]*', host):
-              raise SystemExit('Invalid SSH host')
-          if not port.isdigit() or not 1 <= int(port) <= 65535:
-              raise SystemExit('Invalid SSH port')
-          if not re.fullmatch(r'[a-z_][a-z0-9_-]*', user):
-              raise SystemExit('Invalid SSH user')
           root = Path(os.environ['RUNNER_TEMP']) / 'site-ssh'
           root.mkdir(mode=0o700)
           for name, value in [('key', os.environ['SITE_SSH_PRIVATE_KEY']), ('known_hosts', os.environ['SITE_SSH_KNOWN_HOSTS'])]:
@@ -70,7 +60,7 @@ jobs:
               path.write_text(value.rstrip() + '\n')
               path.chmod(0o600)
           (root / 'config').write_text(
-              f'Host site-deploy\n  HostName {host}\n  Port {port}\n  User {user}\n'
+              'Host site-deploy\n  HostName 117.72.29.124\n  Port 2610\n  User olsond\n'
               f'  IdentityFile {root}/key\n  UserKnownHostsFile {root}/known_hosts\n'
               '  StrictHostKeyChecking yes\n  IdentitiesOnly yes\n  BatchMode yes\n  ConnectTimeout 20\n'
           )

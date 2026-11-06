@@ -9,6 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <link rel="preload" href="assets/fonts/satoshi-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/demo.css">
 <!-- 手机端“打开小程序”按钮的跳转地址（微信 URL Link 或明文 URL Scheme）。留空时不显示按钮，只保留微信搜索入口。 -->
 <meta name="ctxa-miniprogram-link" content="">
 <script>
@@ -24,8 +25,8 @@
 </head>
 <body>
 <!--
-THESIS: 产品一句话说得清，官网就短：首屏说清是什么并给入口，第二屏让访客亲手做一道题，结尾再给一次入口。不写长文，不做滚动动画，不列功能清单。
-STORY: 首屏手机循环演示 prized 的一次闭环（认词 → 做题 → 学完）；第二屏是同一个词的语境题（做题 → 反馈与辨析）；结尾扫码或在微信搜索「语境助手」。
+THESIS: 用一词的完整体验说明产品，再让访客亲手试题；学习记录与复习承接下一次练习。
+STORY: 叠卡阅读 → 作答与深入解析 → 学习收获 → 今日目标；微信入口使用完整登记名称。
 -->
 <a class="skip" href="#main">跳到正文</a>
 
@@ -57,66 +58,78 @@ STORY: 首屏手机循环演示 prized 的一次闭环（认词 → 做题 → �
             <img class="qr__img" src="assets/img/miniprogram-code.png" alt="语境助手小程序码" width="240" height="240" data-qr-img>
             <span class="logo qr__fallback" aria-hidden="true"></span>
           </div>
-          <p class="entry__text"><strong data-qr-cap>微信扫码，开始练习</strong>或在微信搜索「语境助手」</p>
+          <p class="entry__text"><strong data-qr-cap>微信扫码，开始练习</strong>或在微信搜索<br>「奥尔森迪语境助手」</p>
         </div>
 
         <a class="open entry--open enter" style="--d: 200ms" href="#get" data-open>打开小程序</a>
         <div class="entry entry--search enter" style="--d: 200ms">
-          <p class="entry__text"><span>在微信搜索</span><strong>语境助手</strong></p>
-          <button type="button" class="copy" data-copy="语境助手">复制名称</button>
+          <p class="entry__text"><span>在微信搜索</span><strong>奥尔森迪语境助手</strong></p>
+          <button type="button" class="copy" data-copy="奥尔森迪语境助手">复制名称</button>
         </div>
         <p class="toast" role="status" aria-live="polite" data-toast></p>
       </div>
 
-      <!-- 手机里循环演示一次闭环：正面 → 翻面释义 → 语境题 → 反馈 → 学完 -->
-      <div class="phone enter" style="--d: 260ms" aria-hidden="true" data-demo>
-        <div class="phone__screen">
-          <p class="ps-status"><span>托福语境练习</span><span>学完 <b class="ps-count" data-demo-count>127</b> / 1600</span></p>
-          <div class="ps-stage">
-            <div class="ps-view ps-view--card">
-              <div class="ps-flip">
-                <div class="ps-face ps-face--front" data-tap="front">
-                  <svg class="ico ico--heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg>
-                  <span class="ps-word ps-word--front">prized</span>
-                  <span class="ps-tip">「 轻触查看语境 · 上滑跳过 」</span>
-                  <i class="tap"></i>
-                </div>
-                <div class="ps-face ps-face--back">
-                  <div class="ps-card__head">
-                    <span class="ps-word">prized</span>
-                    <svg class="ico ico--heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg>
+      <div class="demo enter" style="--d: 260ms" data-demo-shell>
+        <div class="phone" data-demo data-scene="front" aria-hidden="true">
+          <div class="phone__screen">
+            <div class="app-brand"><span class="logo"></span><span>Contexta</span><span class="app-capsule"><i></i><i></i><i></i><b></b></span></div>
+            <div class="app-body">
+              <div class="app-scene app-learn">
+                <p class="app-status">托福语境练习 · <b data-demo-count>127</b><span> / 1600</span></p>
+                <div class="app-stack">
+                  <div class="app-stack__sheet app-stack__sheet--back"></div>
+                  <div class="app-stack__sheet app-stack__sheet--middle"></div>
+                  <div class="app-card">
+                    <div class="app-card__face app-card__front"><svg class="ico app-heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg><strong>construction</strong><p>「 轻触查看语境 · 上滑跳过 」</p><i class="app-touch"></i></div>
+                    <div class="app-card__face app-card__back">
+                      <div class="app-word-row"><strong>construction</strong><svg class="ico app-heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5Z"/></svg></div>
+                      <p class="app-phon">[kənˈstrʌkʃən]</p>
+                      <p class="app-meaning"><b>n.</b> 建造；施工<br><b>n.</b> 结构；构造</p>
+                      <div class="app-reading"><p class="app-source">托福语境练习 · 非官方内容</p><p>The rapid <mark>construction</mark> of elevated walkways allowed visitors to cross the wetlands without disturbing the soil below.</p><p class="app-translation">高架步道的快速建造让游客可以穿过湿地，同时不扰动下方的土壤。</p></div>
+                    </div>
                   </div>
-                  <p class="ps-phon"><span>英</span> [praɪzd]　<span>美</span> [praɪzd]</p>
-                  <p class="ps-sense"><span class="ps-pos">adj.</span> 珍贵的；备受重视的</p>
-                  <dl class="ps-rel">
-                    <div><dt>prize</dt><dd><span>词族</span>珍视；奖项</dd></div>
-                    <div><dt>highly prized</dt><dd><span>搭配</span>备受珍视的</dd></div>
-                  </dl>
                 </div>
+                <div class="app-primary">开始学习 · 4 道题 <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div>
               </div>
-              <div class="ps-btn" data-tap="start">开始学习 · 6 道题<i class="tap"></i></div>
+              <div class="app-scene app-question">
+                <div class="app-question__progress"><span>当前词题组 · 4 / 4</span><i></i><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8 12 3 3 5-6"/></svg></div>
+                <div class="app-question__meta"><span>托福语境练习 · 非官方内容</span><span>中文辅助</span></div>
+                <p class="app-passage">The rapid <mark>construction</mark> of elevated walkways allowed visitors to cross the wetlands without disturbing the soil below.</p>
+                <p class="app-prompt">“construction” is closest in meaning to:</p>
+                <ul class="app-options"><li class="app-option app-option--correct"><b>A</b><span>building</span><svg class="ico" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></li><li class="app-option"><b>B</b><span>repair</span></li><li class="app-option"><b>C</b><span>destruction</span></li><li class="app-option app-option--picked"><b>D</b><span>design</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></li></ul>
+                <p class="app-answer-note">正确答案 A · 已标记为需复习</p>
+              </div>
+              <div class="app-scene app-explanation">
+                <h3>深入解析</h3>
+                <div class="app-recap"><span>本题回顾</span><p>“construction” is closest in meaning to:</p><p>你的选择：D design</p><strong>正确答案：A building</strong></div>
+                <div class="app-analysis"><h4>语境核心要点</h4><p>步道让游客得以通行，句子关注的是实际修建过程，而不只是图纸上的设计。</p></div>
+                <div class="app-comparison"><h4>最强迷惑项对比</h4><p><strong>building</strong><span>实际建造，让步道成为现实。</span></p><p><strong>design</strong><span>方案或规划，不表示已经建成。</span></p></div>
+              </div>
+              <div class="app-scene app-today">
+                <h3><i></i>今日目标</h3>
+                <div class="app-goal"><svg class="app-goal__arc" viewBox="0 0 240 144" data-goal-arc></svg><div class="app-goal__value"><span>答题进度</span><p><strong>12</strong> / 20 题</p><b>还差 8 题</b></div></div>
+                <div class="app-goal-edit">修改每日目标</div>
+                <div class="app-today__heading"><h4>今日获得</h4><span>今天共答 12 题</span></div>
+                <div class="app-rewards"><div><span>今日积分</span><strong>+12</strong></div><div><span>今日 XP</span><strong>+44</strong></div></div>
+                <div class="app-today__heading"><h4>今日已学词本</h4><span>1 本</span></div>
+                <div class="app-today__book"><img src="assets/img/toefl.png" width="46" height="60" alt=""><div><strong>托福语境练习</strong><span>学完 2 词 · 12 题</span><small>最近练习 09:24</small></div></div>
+              </div>
             </div>
-
-            <div class="ps-view ps-view--quiz">
-              <p class="ps-meta"><span class="tag">非官方内容</span><span class="ps-no">6 / 6</span></p>
-              <p class="ps-passage">Researchers still consider the field journals highly <mark>prized</mark> records of the region’s early plant life.</p>
-              <p class="ps-prompt">“prized” is closest in meaning to:</p>
-              <ul class="ps-choices">
-                <li class="ps-choice ps-choice--right"><b>A</b>valued</li>
-                <li class="ps-choice ps-choice--other"><b>B</b>universal</li>
-                <li class="ps-choice ps-choice--picked" data-tap="pick"><b>C</b>uncommon<i class="tap"></i></li>
-                <li class="ps-choice ps-choice--other"><b>D</b>preserved</li>
-              </ul>
-              <div class="ps-compare"><div><p>最强迷惑项对比</p><p>uncommon 只说“不常见”；prized 强调“被珍惜、有价值”。</p></div></div>
+            <div class="app-dock">
+              <div class="app-dock__nav"><span><i class="app-nav-icon app-nav-icon--saved"></i></span><span data-nav-learn><i class="app-nav-icon app-nav-icon--learn"></i></span><span class="app-shortcut"><img src="assets/img/demo/learning-shortcut.png" width="40" height="40" alt=""></span><span data-nav-today><i class="app-nav-icon app-nav-icon--today"></i><i class="app-touch"></i></span><span><i class="app-nav-icon app-nav-icon--profile"></i></span></div>
+              <div class="app-dock__actions"><span><svg class="ico" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></svg></span><span data-secondary-icon><svg class="ico app-secondary--book" viewBox="0 0 24 24"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1m0-15c3-2 6-2 9-1v15c-3-1-6-1-9 1V5Z"/></svg><svg class="ico app-secondary--task" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zm0 9h6m-6 4h6"/></svg></span><span><svg class="ico" viewBox="0 0 24 24"><path d="m10 5 7 7-7 7"/></svg></span><span><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></span></div>
             </div>
-
-            <div class="ps-view ps-view--done">
-              <img class="ps-stamp" src="assets/img/completion-stamp.webp" alt="" width="150" height="150">
-              <p class="ps-done-word">prized</p>
-              <p class="ps-done-note">题组完成 · 已计入学完</p>
-            </div>
+            <div class="app-completion"><div class="app-completion__dialog"><div class="app-completion__close"><svg class="ico" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></div><strong class="app-completion__word">construction</strong><p>练习时间 · 3 分 12 秒</p><div class="app-completion__rewards"><span><b>+12</b> XP</span><span><b>+4</b> 积分</span></div><div class="app-completion__actions"><span>返回继续选词</span><strong>复习错题</strong></div></div><div class="app-confetti" data-demo-confetti></div></div>
           </div>
         </div>
+        <div class="demo__controls" role="group" aria-label="切换功能演示">
+          <button type="button" data-demo-step="reading" data-caption="三层词卡翻面，连着英文语境和中文译文一起看。" aria-pressed="true">词卡与阅读</button>
+          <button type="button" data-demo-step="explanation" data-caption="答错后进入深入解析，分清实际建造与设计规划。" aria-pressed="false">练习与解析</button>
+          <button type="button" data-demo-step="completion" data-caption="完成题组后，打开学习收获，查看时间、XP 与积分。" aria-pressed="false">学习收获</button>
+          <button type="button" data-demo-step="today" data-caption="切到今日，查看目标题数、今日获得与已学词本。" aria-pressed="false">今日目标</button>
+        </div>
+        <div class="demo__caption"><p data-demo-caption>三层词卡翻面，连着英文语境和中文译文一起看。</p><button type="button" class="demo__play" data-demo-play aria-label="暂停演示">暂停</button></div>
+        <p class="demo__note">按当前小程序界面演示 · 题目、进度与奖励数值为示例</p>
       </div>
     </div>
   </section>
@@ -169,28 +182,37 @@ STORY: 首屏手机循环演示 prized 的一次闭环（认词 → 做题 → �
         </div>
       </div>
 
-      <ul class="also" aria-label="小程序里还有" data-reveal>
-        <li>多种用途词本</li>
-        <li>英美音标与收藏</li>
-        <li>学习进度与近 7 天记录</li>
-        <li>每日目标、学习伙伴与勋章</li>
-      </ul>
       <p class="note">雅思、托福方向为原创的非官方语境练习，与相关考试机构没有关联。</p>
     </div>
   </section>
 
-  <!-- 结尾：再给一次入口 -->
+  <section class="practice" aria-labelledby="practice-title">
+    <div class="wrap practice__grid">
+      <div class="practice__intro">
+        <h2 id="practice-title">练完一次，<br>也为下一次留好位置。</h2>
+        <p>选词、练习、回看。按自己的节奏，把语境一点点积累起来。</p>
+        <a class="practice__link" href="#get">在小程序里继续 <span aria-hidden="true">↗</span></a>
+      </div>
+      <dl class="practice__list">
+        <div><dt>词本随时切换，进度分别保留。</dt><dd>选择适合当前学习用途的词本，自主换词，翻开词卡查看音标、词义与语境。</dd></div>
+        <div><dt>不会的题，可以看答案，也可以暂放。</dt><dd>中文辅助按需打开，答过的题可前后回看。答错或查看答案后进入需复习，暂放的题仍保持未完成。</dd></div>
+        <div><dt>想再练的词收藏，练过的留下记录。</dt><dd>从收藏回到单词，在「今日」查看每日目标，在学习记录里回顾近 7 天的练习。</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- 结尾：温暖中性底色，再给一次入口 -->
   <section class="get" id="get" aria-labelledby="get-title">
     <div class="wrap get__grid" data-reveal>
       <div>
         <h2 id="get-title" class="get__title">下一个单词，<br>从微信里开始。</h2>
-        <p class="get__body">微信扫码打开「语境助手」小程序，选一本词本就能开始。</p>
-        <a class="open open--dark get__open" href="#get" data-open>打开小程序</a>
+        <p class="get__body">打开「奥尔森迪语境助手」小程序，选一本词本，开始你的语境练习。</p>
+        <a class="open get__open" href="#get" data-open>打开小程序</a>
         <div class="get__search">
-          <span>微信搜索</span>
-          <strong>语境助手</strong>
-          <button type="button" class="copy copy--dark" data-copy="语境助手">复制名称</button>
+          <p><span>在微信搜索</span><strong>奥尔森迪语境助手</strong></p>
+          <button type="button" class="copy" data-copy="奥尔森迪语境助手">复制名称</button>
         </div>
+        <p class="toast toast--get" role="status" aria-live="polite" data-toast></p>
       </div>
       <div class="get__qr" data-qr>
         <div class="get__code">
@@ -198,6 +220,7 @@ STORY: 首屏手机循环演示 prized 的一次闭环（认词 → 做题 → �
           <span class="logo qr__fallback" aria-hidden="true"></span>
         </div>
         <p class="get__cap" data-qr-cap>微信扫一扫 · 语境助手</p>
+        <p class="get__hint" data-qr-hint>手机端可长按识别，或复制名称到微信搜索。</p>
       </div>
     </div>
   </section>
@@ -205,7 +228,7 @@ STORY: 首屏手机循环演示 prized 的一次闭环（认词 → 做题 → �
 
 <footer class="foot">
   <div class="wrap foot__row">
-    <span class="foot__brand"><span class="logo" aria-hidden="true"></span>Contexta｜语境助手</span>
+    <a class="foot__brand" href="#top" aria-label="返回首页"><span class="logo" aria-hidden="true"></span><span><strong>Contexta</strong><span>语境助手</span></span></a>
     <div class="foot__meta">
       <span>© 2026 Contexta</span>
       <a class="foot__filing" href="https://beian.miit.gov.cn/">粤ICP备2026122136号</a>
@@ -214,5 +237,6 @@ STORY: 首屏手机循环演示 prized 的一次闭环（认词 → 做题 → �
 </footer>
 
 <script src="assets/site.js" defer></script>
+<script src="assets/demo.js" defer></script>
 </body>
 </html>

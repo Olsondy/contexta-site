@@ -40,61 +40,6 @@
     if (!saved) applyTheme(event.matches ? 'light' : 'dark')
   })
 
-  // 首屏手机：循环演示一次闭环，滚出视野或页面隐藏时暂停
-  const demo = document.querySelector('[data-demo]')
-  const count = demo.querySelector('[data-demo-count]')
-  const BASE_COUNT = 127
-  const tap = (name) => {
-    const target = demo.querySelector(`[data-tap="${name}"]`)
-    target.classList.remove('is-tapping')
-    void target.offsetWidth
-    target.classList.add('is-tapping')
-    setTimeout(() => target.classList.remove('is-tapping'), 600)
-  }
-  const setStage = (stage) => {
-    demo.dataset.stage = stage
-    const finished = stage === 'done'
-    count.textContent = String(BASE_COUNT + (finished ? 1 : 0))
-    count.classList.toggle('is-bump', finished)
-  }
-  // [开始时间 ms, 动作]
-  const TIMELINE = [
-    [0, () => setStage('front')],
-    [1500, () => tap('front')],
-    [1800, () => setStage('def')],
-    [4300, () => tap('start')],
-    [4600, () => setStage('quiz')],
-    [6300, () => tap('pick')],
-    [6500, () => setStage('answer')],
-    [9300, () => setStage('done')],
-  ]
-  const LOOP = 11800
-  let timers = []
-  let running = false
-  const play = () => {
-    if (running) return
-    running = true
-    const cycle = () => {
-      timers = TIMELINE.map(([at, action]) => setTimeout(action, at))
-      timers.push(setTimeout(cycle, LOOP))
-    }
-    cycle()
-  }
-  const stop = () => {
-    running = false
-    timers.forEach(clearTimeout)
-    timers = []
-  }
-  if (reduceMotion) {
-    setStage('def')
-  } else {
-    setStage('front')
-    let visible = false
-    const sync = () => (visible && !document.hidden ? play() : stop())
-    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync() }, { threshold: 0.35 }).observe(demo)
-    document.addEventListener('visibilitychange', sync)
-  }
-
   // 后续段落滚动到时淡入
   const revealer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -117,6 +62,7 @@
   const notes = [...quiz.querySelectorAll('[data-note]')]
   const verdict = quiz.querySelector('[data-verdict]')
   const feedback = quiz.querySelector('[data-feedback]')
+  feedback.inert = true
 
   const answer = (picked) => {
     const right = picked.hasAttribute('data-right')
@@ -131,8 +77,9 @@
       note.classList.toggle('is-key', key === 'a' || key === picked.dataset.choice)
     })
     verdict.textContent = right ? '答对了。' : '选错了，看看为什么。'
+    feedback.inert = false
     quiz.classList.add('is-answered')
-    setTimeout(() => feedback.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 420)
+    setTimeout(() => feedback.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' }), reduceMotion ? 0 : 420)
   }
 
   const reset = () => {
@@ -141,6 +88,7 @@
       choice.classList.remove('is-right', 'is-wrong', 'is-dim')
     })
     quiz.classList.remove('is-answered')
+    feedback.inert = true
     choices[0].focus()
   }
 
@@ -156,13 +104,15 @@
     cn.hidden = !on
   })
 
-  // 小程序码未放入时，显示品牌标志作为占位
+  // 真实码图缺失时明确给出搜索路径，不把品牌标志当作可识别的小程序码
   document.querySelectorAll('[data-qr]').forEach((qr) => {
     const img = qr.querySelector('[data-qr-img]')
     const markMissing = () => {
       qr.classList.add('is-missing')
       const cap = qr.querySelector('[data-qr-cap]')
-      if (cap) cap.textContent = '微信小程序 · 语境助手'
+      if (cap) cap.textContent = qr.classList.contains('get__qr') ? '在微信搜索完整名称即可进入' : '微信小程序 · 语境助手'
+      const hint = qr.querySelector('[data-qr-hint]')
+      if (hint) hint.textContent = '奥尔森迪语境助手'
     }
     if (img.complete && img.naturalWidth === 0) markMissing()
     img.addEventListener('error', markMissing)
@@ -185,18 +135,20 @@
   }
 
   // 复制小程序名称
-  const toast = document.querySelector('[data-toast]')
   document.querySelectorAll('[data-copy]').forEach((button) => {
+    let restore = null
     button.addEventListener('click', async () => {
-      const original = button.textContent
+      const toast = button.closest('section').querySelector('[data-toast]')
+      const name = button.dataset.copy
+      clearTimeout(restore)
       try {
-        await navigator.clipboard.writeText(button.dataset.copy)
+        await navigator.clipboard.writeText(name)
         button.textContent = '已复制'
-        toast.textContent = '已复制「语境助手」，打开微信搜索即可。'
+        toast.textContent = `已复制「${name}」，打开微信搜索即可。`
       } catch {
-        toast.textContent = '复制没有成功，请在微信中手动搜索「语境助手」。'
+        toast.textContent = `复制未成功，请在微信中手动搜索「${name}」。`
       }
-      setTimeout(() => { button.textContent = original }, 1800)
+      restore = setTimeout(() => { button.textContent = '复制名称' }, 1800)
     })
   })
 })()

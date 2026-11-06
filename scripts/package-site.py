@@ -49,7 +49,7 @@ def validate(root):
             raise ValueError(f"Reference escapes the site: {url}")
         if not target.is_file():
             if target == root / "assets/img/miniprogram-code.png":
-                print("NOTE: Mini-program code absent; existing brand fallback is retained.")
+                print("NOTE: Mini-program code absent; the page provides the full WeChat search name.")
                 continue
             raise ValueError(f"Missing reference in {source.relative_to(root)}: {url}")
     return files

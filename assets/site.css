@@ -337,8 +337,9 @@ mark { background: linear-gradient(180deg, transparent 70%, var(--highlight) 70%
 .foot__row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .foot__brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink-2); }
 .foot__brand .logo { width: 22px; height: 22px; }
-.foot__filing { margin-top: 16px; text-align: center; }
-.foot__filing a { color: inherit; }
+.foot__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px; }
+.foot__meta > * { white-space: nowrap; }
+.foot__filing { color: inherit; }
 
 /* ---------- 平板 ---------- */
 @media (max-width: 900px) {
@@ -377,6 +378,8 @@ mark { background: linear-gradient(180deg, transparent 70%, var(--highlight) 70%
   .get__grid { grid-template-columns: 1fr; }
   .get__qr { display: none; }
   .btn { min-height: 48px; padding: 0 20px; font-size: 15px; }
+  .foot__row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .foot__meta { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

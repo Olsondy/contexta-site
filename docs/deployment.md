@@ -12,7 +12,7 @@
 
 ### 服务器
 
-目标主机需要 Python 3、OpenSSH/SFTP 和 Nginx。使用 Site 专用密钥，部署公钥安装在所选账号的 `~/.ssh/authorized_keys`，不复用本机管理员私钥。以运维账号创建发布目录，以下变量填写与 `SITE_SSH_USER` 对应的部署账号及其主组：
+目标主机需要 Python 3、OpenSSH、GNU timeout 和 Nginx。使用 Site 专用密钥，部署公钥安装在所选账号的 `~/.ssh/authorized_keys`，不复用本机管理员私钥。以运维账号创建发布目录，以下变量填写与 `SITE_SSH_USER` 对应的部署账号及其主组：
 
 ```bash
 site_deploy_user='<部署账号>'
@@ -22,6 +22,28 @@ sudo install -d -m 755 -o "$site_deploy_user" -g "$site_deploy_group" \
 ```
 
 已有目录时先确认所有者，不直接覆盖正在使用的发布指针。Nginx 用户需要遍历 `/srv/contexta/site/current` 及父目录的权限。部署用户只需写入 `/srv/contexta/site`，不需要写 Nginx 配置目录。服务器只接收上传，不从 GitHub 拉代码；但 GitHub 托管 runner 必须能够访问服务器 SSH 端口。
+
+### 部署公钥限制
+
+管理员使用日常管理密钥把本仓库 `scripts/receive-site.py` 与 `scripts/activate-site.py` 同步到服务器，再安装到以下固定位置：
+
+```bash
+sudo install -d -m 755 -o root -g root /usr/local/libexec/contexta-site
+sudo install -m 644 -o root -g root receive-site.py activate-site.py \
+  /usr/local/libexec/contexta-site/
+```
+
+在 `authorized_keys` 中只给 Site 部署公钥这一行添加前缀，公钥内容保持原值，其他日常管理公钥不变：
+
+```text
+restrict,command="/usr/bin/timeout 180 /usr/bin/python3 -I -B /usr/local/libexec/contexta-site/receive-site.py" ssh-ed25519 <Site 部署公钥内容> contexta-site-github-actions
+```
+
+`restrict` 禁用终端、端口转发、Agent/X11 转发和用户 SSH rc；强制命令仅接受 `contexta-site deploy <commit-run-attempt> <sha256>`，从标准输入读取最多 25 MiB 的压缩静态归档，再调用固定的校验与激活脚本。超时为 180 秒，Python 使用隔离模式。普通命令、交互式登录、`sudo`、远程 Python、SFTP 和 SCP 都不在允许范围内，不能用这把密钥读取或写入任意服务器文件。
+
+限制作用于这一把密钥，不改变登录账号经其他管理密钥获得的权限。仅添加 `restrict` 而没有强制命令仍会允许执行远程命令；不得移除强制命令或把它改回从标准输入执行 Python。接收脚本、激活脚本及父目录必须归 root 所有且不可由普通用户写入。
+
+修改 `scripts/receive-site.py` 或 `scripts/activate-site.py` 时，先由管理员同步上述服务器副本，再发布工作流变更；GitHub 部署密钥不能安装或修改这些脚本。普通页面更新不需要此步骤。
 
 ### GitHub 仓库
 
@@ -61,7 +83,7 @@ gh workflow run deploy-site.yml --ref main --repo Olsondy/contexta-site
 2. 运行 `python3 scripts/package-site.py` 校验引用。尚未提供的小程序码是明确允许的缺失项，保留页面既有品牌回退；其他缺失的 HTML/CSS 资源会阻止发布。
 3. 提交推送 `main`，查看 Actions 的校验和部署结果。只改文档或宣传短片不会自动部署；需要时可手动触发。
 
-工作流不使用 `git archive` 打包整个仓库，只打包经过校验的页面与资源。版本名由完整 commit SHA、run ID 和 attempt 组成。远端核对 SHA-256 和归档路径，拒绝越界文件、链接、重复成员及缺少必要文件的归档，上传或校验失败不会改变当前指针。
+工作流不使用 `git archive` 打包整个仓库，只打包经过校验的页面与资源。版本名由完整 commit SHA、run ID 和 attempt 组成。`deploy-site.sh` 通过一次 SSH 把静态归档发送给固定接收脚本，不上传或执行客户端提供的代码。远端核对 SHA-256 和归档路径，拒绝越界文件、链接、重复成员及缺少必要文件的归档，上传或校验失败不会改变当前指针。
 
 ## 目录与回退
 
@@ -88,6 +110,8 @@ ln -s "releases/$previous" current.rollback
 mv -Tf current.rollback current
 ```
 
+上述回退通过日常管理密钥执行；受限的 GitHub 部署密钥不接受这些 Shell 命令。
+
 不需要回滚 Server 镜像或 reload Nginx。Nginx 应为未带哈希文件名的页面、CSS、JS 和字体配置 `Cache-Control: no-cache`。成功上传只证明静态目录已切换，不等于 DNS、TLS、Nginx 分流或页面视觉已验收；首次接通后仍需验证真实网址。失败的上传归档、未启用版本和历史目录由运维按需要清理。
 
 ## 验证记录
@@ -97,3 +121,5 @@ mv -Tf current.rollback current
 同日已安装专用部署公钥并验证 SSH 登录，GitHub 保存部署私钥和服务器主机公钥。工作流启用后的首次发布 `42145184305` 校验和部署成功，目标主机 Nginx、DNS 和 TLS 已接通，公网产品页和全部现存静态资源可读，`www` 保留路径和查询参数跳转根域名；完整接入记录见 Server 产品页接入说明。
 
 后续按用户要求，连接地址、端口和账号也改为从 Secrets 读取，共五个 Secrets；移除当前工作流和文档中的真实连接信息。已有 Git 历史保留原记录，本次不重写历史。
+
+同日给部署公钥加上 `restrict` 与固定接收命令，服务器脚本由 root 持有，传输改成单次 SSH 发送静态归档。12 项部署测试通过；使用实际部署私钥验证普通命令、`sudo`、远程 Python、交互式 Shell、SFTP、PTY 和远程端口转发均被拒绝，损坏归档被拒绝且不切换版本，日常管理密钥仍可登录。接收脚本及激活脚本更新必须经管理员另行安装。

@@ -27,6 +27,8 @@ python3 -m http.server 8000   # 打开 http://localhost:8000
 
 自动部署以 [docs/deployment.md](docs/deployment.md) 为准：启用 GitHub 工作流后，`main` 的页面和资源改动先校验，再上传并切换静态目录。连接地址、端口、账号、专用部署私钥和服务器主机公钥统一从 Repository secrets 读取，不在源码或文档中写真实连接信息，不另设启用变量；暂停发布使用 GitHub 自带的禁用工作流功能。部署配置属于本仓库，不引入 Server 构建；不把密钥写入代码或在流水线中关闭 SSH 主机校验。提交前可运行 `python3 scripts/package-site.py` 检查静态资源。
 
+部署公钥必须通过 `restrict,command="…"` 绑定管理员安装的固定接收脚本，只接收静态归档，不允许任意 Shell、Python、SFTP 或转发。`scripts/receive-site.py` 与 `scripts/activate-site.py` 在服务器的副本及其目录归 root 所有，自动部署密钥不能更新它们；修改这两个脚本后，管理员必须另行同步服务器副本，详见部署文档。
+
 ## 文案
 
 - 范围以 `PRODUCT.md` 为准：只描述小程序当前已有的能力，不写用户数、证言或效果数据。

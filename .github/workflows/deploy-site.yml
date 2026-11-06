@@ -8,6 +8,7 @@ on:
       - assets/**
       - scripts/package-site.py
       - scripts/activate-site.py
+      - scripts/receive-site.py
       - scripts/deploy-site.sh
       - scripts/test-deployment.py
       - .github/workflows/deploy-site.yml

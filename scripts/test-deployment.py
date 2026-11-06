@@ -20,6 +20,7 @@ def load_script(name):
 
 package = load_script("package-site")
 activation = load_script("activate-site")
+receiver = load_script("receive-site")
 
 
 class DeploymentTests(unittest.TestCase):
@@ -98,6 +99,64 @@ class DeploymentTests(unittest.TestCase):
         (self.root / "assets/site.js").write_text("'use strict'")
         with self.assertRaisesRegex(ValueError, "Missing reference"):
             package.validate(self.root)
+
+    def test_receiver_deploys_archive_without_running_client_code(self):
+        archive, release, checksum = self.archive(1)
+        body = archive.read_bytes()
+        archive.unlink()
+        receiver.receive(self.root, io.BytesIO(body), f"contexta-site deploy {release} {checksum}")
+        self.assertEqual((self.root / "current/product/index.html").read_text(), "version 1")
+        self.assertEqual(list((self.root / "incoming").iterdir()), [])
+
+    def test_receiver_rejects_commands_before_reading_input(self):
+        archive, release, checksum = self.archive(1)
+        valid = f"contexta-site deploy {release} {checksum}"
+        commands = [
+            "", "id", "sudo -n id", "internal-sftp", "/usr/lib/openssh/sftp-server",
+            f"python3 - '{release}' '{checksum}'",
+            valid + "; id", valid + "\nid", valid + " --root /tmp",
+        ]
+        for command in commands:
+            with self.subTest(command=command), self.assertRaisesRegex(ValueError, "Only static"):
+                receiver.receive(self.root, None, command)
+        self.assertFalse((self.root / "current").exists())
+        self.assertEqual(list((self.root / "incoming").iterdir()), [archive])
+
+    def test_receiver_bad_checksum_removes_upload_and_keeps_current(self):
+        self.activate(self.archive(1))
+        archive, release, checksum = self.archive(2)
+        body = archive.read_bytes()
+        archive.unlink()
+        with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+            receiver.receive(self.root, io.BytesIO(body), f"contexta-site deploy {release} {'0' * 64}")
+        self.assertEqual((self.root / "current/product/index.html").read_text(), "version 1")
+        self.assertEqual(list((self.root / "incoming").iterdir()), [])
+
+    def test_receiver_oversized_upload_removes_partial_file_and_keeps_current(self):
+        self.activate(self.archive(1))
+        previous_limit = receiver.MAX_ARCHIVE_BYTES
+        self.addCleanup(setattr, receiver, "MAX_ARCHIVE_BYTES", previous_limit)
+        receiver.MAX_ARCHIVE_BYTES = 10
+        command = f"contexta-site deploy {'b' * 40}-10-1 {'0' * 64}"
+        with self.assertRaisesRegex(ValueError, "upload budget"):
+            receiver.receive(self.root, io.BytesIO(b"x" * 11), command)
+        self.assertEqual((self.root / "current/product/index.html").read_text(), "version 1")
+        self.assertEqual(list((self.root / "incoming").iterdir()), [])
+
+    def test_receiver_rejects_symlink_archive_member(self):
+        archive, release, checksum = self.archive(1)
+        with tarfile.open(archive, "w:gz") as output:
+            member = tarfile.TarInfo("product/assets/escape")
+            member.type = tarfile.SYMTYPE
+            member.linkname = "/home/deploy/.ssh/authorized_keys"
+            output.addfile(member)
+        body = archive.read_bytes()
+        checksum = hashlib.sha256(body).hexdigest()
+        archive.unlink()
+        with self.assertRaisesRegex(ValueError, "Unsupported archive member"):
+            receiver.receive(self.root, io.BytesIO(body), f"contexta-site deploy {release} {checksum}")
+        self.assertFalse((self.root / "current").exists())
+        self.assertEqual(list((self.root / "incoming").iterdir()), [])
 
 
 if __name__ == "__main__":

@@ -43,16 +43,29 @@ jobs:
         run: python3 scripts/package-site.py --output "$RUNNER_TEMP/site.tar.gz"
       - name: Configure deployment SSH
         env:
+          SITE_SSH_HOST: ${{ secrets.SITE_SSH_HOST }}
+          SITE_SSH_PORT: ${{ secrets.SITE_SSH_PORT }}
+          SITE_SSH_USER: ${{ secrets.SITE_SSH_USER }}
           SITE_SSH_PRIVATE_KEY: ${{ secrets.SITE_SSH_PRIVATE_KEY }}
           SITE_SSH_KNOWN_HOSTS: ${{ secrets.SITE_SSH_KNOWN_HOSTS }}
         run: |
           python3 - <<'PY'
           import os
+          import re
           from pathlib import Path
-          names = ['SITE_SSH_PRIVATE_KEY', 'SITE_SSH_KNOWN_HOSTS']
+          names = ['SITE_SSH_HOST', 'SITE_SSH_PORT', 'SITE_SSH_USER', 'SITE_SSH_PRIVATE_KEY', 'SITE_SSH_KNOWN_HOSTS']
           for name in names:
               if not os.environ.get(name, '').strip():
                   raise SystemExit(f'Missing deployment secret: {name}')
+          host = os.environ['SITE_SSH_HOST']
+          port = os.environ['SITE_SSH_PORT']
+          user = os.environ['SITE_SSH_USER']
+          if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.:-]*', host):
+              raise SystemExit('Invalid SITE_SSH_HOST')
+          if not re.fullmatch(r'[0-9]{1,5}', port) or not 1 <= int(port) <= 65535:
+              raise SystemExit('Invalid SITE_SSH_PORT')
+          if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', user):
+              raise SystemExit('Invalid SITE_SSH_USER')
           root = Path(os.environ['RUNNER_TEMP']) / 'site-ssh'
           root.mkdir(mode=0o700)
           for name, value in [('key', os.environ['SITE_SSH_PRIVATE_KEY']), ('known_hosts', os.environ['SITE_SSH_KNOWN_HOSTS'])]:
@@ -60,7 +73,7 @@ jobs:
               path.write_text(value.rstrip() + '\n')
               path.chmod(0o600)
           (root / 'config').write_text(
-              'Host site-deploy\n  HostName 117.72.29.124\n  Port 2610\n  User olsond\n'
+              f'Host site-deploy\n  HostName {host}\n  Port {port}\n  User {user}\n'
               f'  IdentityFile {root}/key\n  UserKnownHostsFile {root}/known_hosts\n'
               '  StrictHostKeyChecking yes\n  IdentitiesOnly yes\n  BatchMode yes\n  ConnectTimeout 20\n'
           )

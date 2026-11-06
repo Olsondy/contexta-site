@@ -12,10 +12,12 @@
 
 ### 服务器
 
-目标主机需要 Python 3、OpenSSH/SFTP 和 Nginx。当前复用 `olsond` 账号，使用 Site 专用密钥；部署公钥已追加到 `/home/olsond/.ssh/authorized_keys`，不复用本机管理员私钥。以运维账号创建发布目录：
+目标主机需要 Python 3、OpenSSH/SFTP 和 Nginx。使用 Site 专用密钥，部署公钥安装在所选账号的 `~/.ssh/authorized_keys`，不复用本机管理员私钥。以运维账号创建发布目录，以下变量填写与 `SITE_SSH_USER` 对应的部署账号及其主组：
 
 ```bash
-sudo install -d -m 755 -o olsond -g olsond \
+site_deploy_user='<部署账号>'
+site_deploy_group='<部署账号主组>'
+sudo install -d -m 755 -o "$site_deploy_user" -g "$site_deploy_group" \
   /srv/contexta/site /srv/contexta/site/releases /srv/contexta/site/incoming
 ```
 
@@ -23,20 +25,26 @@ sudo install -d -m 755 -o olsond -g olsond \
 
 ### GitHub 仓库
 
-服务器地址 `117.72.29.124`、SSH 端口 `2610` 和账号 `olsond` 直接写在工作流的 SSH 配置中，更换服务器时修改该文件。在 `Settings → Secrets and variables → Actions` 只保留以下两个 Repository secrets，不把私钥或主机公钥内容写入源码：
+在 `Settings → Secrets and variables → Actions` 配置以下五个 Repository secrets。服务器地址、端口和账号也不写入工作流或部署文档；更换服务器时同步修改连接信息及经验证的主机公钥：
 
 | Secret | 内容 |
 | --- | --- |
+| `SITE_SSH_HOST` | 部署服务器的 IP 或主机名 |
+| `SITE_SSH_PORT` | 服务器 SSH 端口 |
+| `SITE_SSH_USER` | 静态目录所有者对应的部署账号 |
 | `SITE_SSH_PRIVATE_KEY` | 该账号专用部署私钥，对应公钥已安装在服务器 |
 | `SITE_SSH_KNOWN_HOSTS` | 经可信渠道确认的服务器 SSH 主机公钥行；非 22 端口使用 `[主机]:端口` 格式 |
 
 工作流强制校验已知主机，不使用 `StrictHostKeyChecking=no` 或在流水线中临时信任扫描结果。不要直接复用管理员私钥。
 
-部署公钥只需装在服务器，不另存为 Secret。当前两个 Secrets 已配置。完成目录权限后，在 Actions 的 `Deploy product site` 页面启用工作流，再手动运行 `main`。首次上传通过后再切换、检查并 reload Nginx，然后验证公网产品页和资源。之后推送到 `main` 即自动发布，无额外人工构建。需要暂停时使用该页面菜单中的 `Disable workflow`；禁用期间校验与部署都不自动运行，需要本地检查。
+部署公钥只需装在服务器，不另存为 Secret。完成 Secrets 与目录权限后，在 Actions 的 `Deploy product site` 页面启用工作流，再手动运行 `main`。首次上传通过后再切换、检查并 reload Nginx，然后验证公网产品页和资源。当前已完成首次接入并启用工作流，之后推送到 `main` 即自动发布，无额外人工构建。需要暂停时使用该页面菜单中的 `Disable workflow`；禁用期间校验与部署都不自动运行，需要本地检查。
 
 GitHub CLI 也可以从本机设置这些值；私钥以文件输入，避免回显：
 
 ```bash
+gh secret set SITE_SSH_HOST --repo Olsondy/contexta-site
+gh secret set SITE_SSH_PORT --repo Olsondy/contexta-site
+gh secret set SITE_SSH_USER --repo Olsondy/contexta-site
 gh secret set SITE_SSH_PRIVATE_KEY --repo Olsondy/contexta-site < /path/to/dedicated-key
 gh secret set SITE_SSH_KNOWN_HOSTS --repo Olsondy/contexta-site < /path/to/verified-known-hosts
 gh workflow enable deploy-site.yml --repo Olsondy/contexta-site
@@ -86,4 +94,6 @@ mv -Tf current.rollback current
 
 2026-11-06 首次实现已通过资源校验、17 个公开文件的打包范围检查、Shell/JavaScript 语法检查、工作流 YAML 与触发条件检查，以及 `PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-deployment.py` 的 7 项部署测试。
 
-同日配置简化为两个 Secrets，服务器连接信息改为工作流内固定值。专用部署公钥已安装到 `olsond` 账号并用配对私钥验证 SSH 登录，GitHub 已保存部署私钥和服务器主机公钥。工作流在首次接入前暂时禁用；尚未验证真实 GitHub 上传或切换目标主机 Nginx，不能把登录验证当作发布完成。
+同日已安装专用部署公钥并验证 SSH 登录，GitHub 保存部署私钥和服务器主机公钥。工作流启用后的首次发布 `42145184305` 校验和部署成功，目标主机 Nginx、DNS 和 TLS 已接通，公网产品页和全部现存静态资源可读，`www` 保留路径和查询参数跳转根域名；完整接入记录见 Server 产品页接入说明。
+
+后续按用户要求，连接地址、端口和账号也改为从 Secrets 读取，共五个 Secrets；移除当前工作流和文档中的真实连接信息。已有 Git 历史保留原记录，本次不重写历史。

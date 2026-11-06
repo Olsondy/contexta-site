@@ -25,7 +25,7 @@ python3 -m http.server 8000   # 打开 http://localhost:8000
 
 正式入口保留 `mycontexta.com/product`，由 Nginx 补齐末尾斜杠到 `/product/`，直接提供本项目静态文件；不要再把页面复制进 `contexta-server` 的 Next.js 路由。首次接入、目录权限、独立上传与回退统一见[产品页独立部署](../contexta-server/docs/architecture/product-site-deployment.md)。页面调整无需 Server 构建或应用重启。
 
-自动部署以 [docs/deployment.md](docs/deployment.md) 为准：启用 GitHub 工作流后，`main` 的页面和资源改动先校验，再上传并切换静态目录。连接地址、端口、账号固定在工作流中，Secrets 只保留专用部署私钥和服务器主机公钥，不另设启用变量；暂停发布使用 GitHub 自带的禁用工作流功能。部署配置属于本仓库，不引入 Server 构建；不把密钥写入代码或在流水线中关闭 SSH 主机校验。提交前可运行 `python3 scripts/package-site.py` 检查静态资源。
+自动部署以 [docs/deployment.md](docs/deployment.md) 为准：启用 GitHub 工作流后，`main` 的页面和资源改动先校验，再上传并切换静态目录。连接地址、端口、账号、专用部署私钥和服务器主机公钥统一从 Repository secrets 读取，不在源码或文档中写真实连接信息，不另设启用变量；暂停发布使用 GitHub 自带的禁用工作流功能。部署配置属于本仓库，不引入 Server 构建；不把密钥写入代码或在流水线中关闭 SSH 主机校验。提交前可运行 `python3 scripts/package-site.py` 检查静态资源。
 
 ## 文案
 
